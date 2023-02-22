@@ -3,16 +3,27 @@
     Tauri-vite
 
 
-## To install Rust , enter the following command
-   
+## Run these system dependencies before rust installation
+    
+    sudo apt install libwebkit2gtk-4.0-dev \
+    build-essential \
+    curl \
+    wget \
+    libssl-dev \
+    libgtk-3-dev \
+    libayatana-appindicator3-dev \
+    librsvg2-dev
+
+
+   ## To install Rust , enter the following command
+
     curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh
 
-## To install Tauri-vite,enter the following command
 
-     npm create tauri-app
 
 ## Project setup
     npm install
-    
+
+
 ## For develop
      npm run tauri dev
