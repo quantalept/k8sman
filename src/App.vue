@@ -21,9 +21,6 @@ export default defineComponent({
         <v-btn color="primary">Click me</v-btn>
       </v-app-bar>
     </header>
-    <main>
-    
-    </main>
     <Homepage></Homepage>
   </v-app>
 </template>
