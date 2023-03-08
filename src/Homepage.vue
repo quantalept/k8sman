@@ -3,7 +3,7 @@
       <v-container>
         <v-card class="mb-5">
           <v-card-title>
-            Welcome to My App!
+            Welcome to K8sman
           </v-card-title>
           
         </v-card>
