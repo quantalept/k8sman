@@ -1,29 +1,30 @@
 <template>
   <div>
     <ul>
-      <li v-for="pod in pods" :key="pod.metadata.name">{{ pod.metadata.name }}</li>
+      <li v-for="pod in pods" :key="pod.name">{{ pod.name }}</li>
     </ul>
   </div>
 </template>
 
 <script>
-import { listPods } from '../k8s/kubernetes';
-
 export default {
   data() {
     return {
-      pods: []
+      pods: [],
     };
   },
   mounted() {
-    this.listPods();
+    this.fetchPods();
   },
   methods: {
-    async listPods() {
-      console.log('Fetching pods...');
-      this.pods = await fetchPods();
-      console.log('Fetched pods:', this.pods);
-    }
-  }
+    async fetchPods() {
+      try {
+        const response = await window.tauri.promisified({ cmd: 'listPods' });
+        this.pods = response.data;
+      } catch (error) {
+        console.error(error);
+      }
+    },
+  },
 };
 </script>
