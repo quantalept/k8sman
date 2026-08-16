@@ -38,6 +38,8 @@ pub fn run() {
             exec::stop_exec,
             portforward::start_port_forward,
             portforward::stop_port_forward,
+            cp::cp_to_pod,
+            cp::cp_from_pod,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

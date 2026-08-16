@@ -5,6 +5,7 @@ import { NCard, NSelect, NSpace, NText, NSwitch, NTabs, NTabPane } from "naive-u
 import LogViewer from "../components/LogViewer.vue";
 import ExecTerminal from "../components/ExecTerminal.vue";
 import PortForwardManager from "../components/PortForwardManager.vue";
+import FileCopyManager from "../components/FileCopyManager.vue";
 import { listResources } from "../api/resources";
 import { useClusterStore } from "../stores/cluster";
 
@@ -76,6 +77,9 @@ const containerOptions = computed(() =>
         </n-tab-pane>
         <n-tab-pane name="portforward" tab="Port Forward">
           <PortForwardManager :namespace="namespace" :pod="podName" />
+        </n-tab-pane>
+        <n-tab-pane name="files" tab="Copy Files">
+          <FileCopyManager :namespace="namespace" :pod="podName" :container="selectedContainer" />
         </n-tab-pane>
       </n-tabs>
       <n-text v-else depth="3">No containers found for this pod.</n-text>
