@@ -1,9 +1,62 @@
 <script setup lang="ts">
-import { NCard, NText } from "naive-ui";
+import { computed, onMounted } from "vue";
+import { open } from "@tauri-apps/plugin-dialog";
+import {
+  NCard,
+  NButton,
+  NDataTable,
+  NSpace,
+  NText,
+  NAlert,
+  type DataTableColumns,
+} from "naive-ui";
+import { useClusterStore, type ContextInfo } from "../stores/cluster";
+
+const store = useClusterStore();
+
+onMounted(() => {
+  store.loadContexts();
+});
+
+async function importKubeconfig() {
+  const selected = await open({
+    multiple: false,
+    title: "Select a kubeconfig file",
+  });
+  if (typeof selected === "string") {
+    await store.addKubeconfig(selected);
+  }
+}
+
+async function forget(path: string) {
+  await store.removeKubeconfig(path);
+}
+
+const contextColumns: DataTableColumns<ContextInfo> = [
+  { title: "Context", key: "name" },
+  { title: "Cluster", key: "cluster" },
+  { title: "Namespace", key: "namespace", render: (row) => row.namespace ?? "default" },
+  { title: "Source", key: "source" },
+];
+
+const contexts = computed(() => store.contexts);
 </script>
 
 <template>
-  <n-card title="Settings">
-    <n-text depth="3">Cluster configuration (kubeconfig import, context management) lands in the cluster-configuration step.</n-text>
-  </n-card>
+  <n-space vertical size="large">
+    <n-card title="Kubeconfig files">
+      <n-space vertical>
+        <n-alert v-if="store.error" type="error" :title="store.error" closable />
+        <n-space v-for="path in store.kubeconfigPaths" :key="path" align="center">
+          <n-text>{{ path }}</n-text>
+          <n-button size="tiny" tertiary type="error" @click="forget(path)">Forget</n-button>
+        </n-space>
+        <n-button size="small" @click="importKubeconfig">Import kubeconfig file…</n-button>
+      </n-space>
+    </n-card>
+
+    <n-card title="Available contexts">
+      <n-data-table :columns="contextColumns" :data="contexts" :bordered="false" size="small" />
+    </n-card>
+  </n-space>
 </template>

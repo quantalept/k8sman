@@ -1,9 +1,18 @@
 <script setup lang="ts">
-import { NCard, NText } from "naive-ui";
+import { NCard } from "naive-ui";
+import ResourceTable from "../components/ResourceTable.vue";
+
+const columns = [
+  {
+    title: "Status",
+    key: "status",
+    render: (row: any) => row.status?.phase ?? "-",
+  },
+];
 </script>
 
 <template>
   <n-card title="Namespaces">
-    <n-text depth="3">Namespace browsing lands in the resource-browsing step.</n-text>
+    <ResourceTable kind="Namespace" :show-namespace="false" :columns="columns" />
   </n-card>
 </template>

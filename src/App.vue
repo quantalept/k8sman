@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { darkTheme, NConfigProvider, NGlobalStyle, NLayout, NLayoutSider, NLayoutHeader, NLayoutContent, NText } from "naive-ui";
 import Sidebar from "./components/Sidebar.vue";
+import ClusterSwitcher from "./components/ClusterSwitcher.vue";
 </script>
 
 <template>
@@ -9,6 +10,8 @@ import Sidebar from "./components/Sidebar.vue";
     <n-layout style="height: 100vh">
       <n-layout-header class="app-header" bordered>
         <n-text strong class="app-title">k8sman</n-text>
+        <div class="app-header-spacer" />
+        <ClusterSwitcher />
       </n-layout-header>
       <n-layout has-sider style="height: calc(100vh - 48px)">
         <n-layout-sider bordered :width="220" content-style="padding: 8px 0;">
@@ -40,5 +43,9 @@ body,
 
 .app-title {
   font-size: 18px;
+}
+
+.app-header-spacer {
+  flex: 1;
 }
 </style>

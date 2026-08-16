@@ -87,12 +87,12 @@ Cross-cutting:
 1. Scaffold: Tauri + Vue/Vite + pnpm, Naive UI, Pinia, vue-router, base dark-theme layout
    (sidebar + content + top bar) matching the mockups' look. **Done.**
 2. Cluster configuration + context switching: `list_contexts`, `switch_context`,
-   `current_context`, client cache, `ClusterSwitcher.vue`.
+   `current_context`, client cache, `ClusterSwitcher.vue`. **Done.**
 3. Resource browsing: discovery + dynamic list/watch + generic `ResourceTable.vue`;
    Namespaces/Nodes/Pods/Services/ConfigMaps/Secrets views.
 4. Log watching: backend stream + `LogViewer.vue`. Establishes the start/stop-stream IPC
-   pattern reused below.
-5. Pod exec: backend bridge + `ExecTerminal.vue` with resize.
+   pattern reused below. **Done.**
+5. Pod exec: backend bridge + `ExecTerminal.vue` with resize. **Done.**
 6. Port-forward: backend TCP bridge + `PortForwardManager.vue`.
 7. File copy: tar-based `cp.rs` + minimal upload/download dialogs.
 8. Metrics/graphs: metrics-server dynamic API + frontend polling + `MetricCard.vue` on the dashboard.
