@@ -6,6 +6,7 @@ import LogViewer from "../components/LogViewer.vue";
 import ExecTerminal from "../components/ExecTerminal.vue";
 import PortForwardManager from "../components/PortForwardManager.vue";
 import FileCopyManager from "../components/FileCopyManager.vue";
+import PodMetricsPanel from "../components/PodMetricsPanel.vue";
 import { listResources } from "../api/resources";
 import { useClusterStore } from "../stores/cluster";
 
@@ -53,6 +54,9 @@ const containerOptions = computed(() =>
       />
 
       <n-tabs v-if="selectedContainer" v-model:value="activeTab" type="line">
+        <n-tab-pane name="metrics" tab="Metrics">
+          <PodMetricsPanel :namespace="namespace" :pod="podName" />
+        </n-tab-pane>
         <n-tab-pane name="logs" tab="Logs">
           <n-space vertical>
             <n-space align="center" :size="4">

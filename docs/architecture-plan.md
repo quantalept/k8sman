@@ -95,7 +95,7 @@ Cross-cutting:
 5. Pod exec: backend bridge + `ExecTerminal.vue` with resize. **Done.**
 6. Port-forward: backend TCP bridge + `PortForwardManager.vue`. **Done.**
 7. File copy: tar-based `cp.rs` + minimal upload/download dialogs. **Done.**
-8. Metrics/graphs: metrics-server dynamic API + frontend polling + `MetricCard.vue` on the dashboard.
+8. Metrics/graphs: metrics-server dynamic API + frontend polling + `MetricCard.vue` on the dashboard. **Done.**
 
 ## Verification
 

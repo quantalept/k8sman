@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { h, ref, computed } from "vue";
 import { useRouter } from "vue-router";
-import { NCard, NTag, NSelect, NSpace } from "naive-ui";
+import { NCard, NTag, NSelect, NSpace, NText } from "naive-ui";
 import ResourceTable from "../components/ResourceTable.vue";
 import { useResourceList } from "../composables/useResourceList";
+import { usePodMetrics } from "../composables/usePodMetrics";
+import { formatCores, formatBytes } from "../api/metrics";
 
 const router = useRouter();
 const namespace = ref<string>("");
 const effectiveNamespace = computed(() => namespace.value || undefined);
 
 const { items: namespaces } = useResourceList("Namespace");
+const { usage: podUsage, supported: metricsSupported } = usePodMetrics(effectiveNamespace);
 const namespaceOptions = computed(() => [
   { label: "All namespaces", value: "" },
   ...namespaces.value.map((ns: any) => ({ label: ns.metadata.name, value: ns.metadata.name })),
@@ -38,6 +41,22 @@ const columns = [
     },
   },
   { title: "Restarts", key: "restarts", render: (row: any) => restarts(row) },
+  {
+    title: "CPU",
+    key: "cpu",
+    render: (row: any) => {
+      const usage = podUsage.value.get(`${row.metadata.namespace}/${row.metadata.name}`);
+      return usage ? formatCores(usage.cpuCores) : "-";
+    },
+  },
+  {
+    title: "Memory",
+    key: "memory",
+    render: (row: any) => {
+      const usage = podUsage.value.get(`${row.metadata.namespace}/${row.metadata.name}`);
+      return usage ? formatBytes(usage.memoryBytes) : "-";
+    },
+  },
 ];
 
 function onRowProps(row: any) {
@@ -57,6 +76,9 @@ function onRowProps(row: any) {
         style="width: 240px"
         placeholder="All namespaces"
       />
+      <n-text v-if="!metricsSupported" depth="3">
+        Metrics unavailable - is metrics-server installed on this cluster?
+      </n-text>
       <ResourceTable kind="Pod" :namespace="effectiveNamespace" :columns="columns" :row-props="onRowProps" />
     </n-space>
   </n-card>
