@@ -4,6 +4,7 @@ import { useRoute } from "vue-router";
 import { NCard, NSelect, NSpace, NText, NSwitch, NTabs, NTabPane } from "naive-ui";
 import LogViewer from "../components/LogViewer.vue";
 import ExecTerminal from "../components/ExecTerminal.vue";
+import PortForwardManager from "../components/PortForwardManager.vue";
 import { listResources } from "../api/resources";
 import { useClusterStore } from "../stores/cluster";
 
@@ -72,6 +73,9 @@ const containerOptions = computed(() =>
             :pod="podName"
             :container="selectedContainer"
           />
+        </n-tab-pane>
+        <n-tab-pane name="portforward" tab="Port Forward">
+          <PortForwardManager :namespace="namespace" :pod="podName" />
         </n-tab-pane>
       </n-tabs>
       <n-text v-else depth="3">No containers found for this pod.</n-text>

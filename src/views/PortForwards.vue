@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { NCard, NText } from "naive-ui";
+import { NCard } from "naive-ui";
+import PortForwardManager from "../components/PortForwardManager.vue";
 </script>
 
 <template>
-  <n-card title="PortForwards">
-    <n-text depth="3">Port-forward management lands in the port-forward step.</n-text>
+  <n-card title="Port Forwards">
+    <PortForwardManager />
   </n-card>
 </template>

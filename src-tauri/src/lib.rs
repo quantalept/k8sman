@@ -36,6 +36,8 @@ pub fn run() {
             exec::exec_write,
             exec::exec_resize,
             exec::stop_exec,
+            portforward::start_port_forward,
+            portforward::stop_port_forward,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

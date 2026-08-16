@@ -93,7 +93,7 @@ Cross-cutting:
 4. Log watching: backend stream + `LogViewer.vue`. Establishes the start/stop-stream IPC
    pattern reused below. **Done.**
 5. Pod exec: backend bridge + `ExecTerminal.vue` with resize. **Done.**
-6. Port-forward: backend TCP bridge + `PortForwardManager.vue`.
+6. Port-forward: backend TCP bridge + `PortForwardManager.vue`. **Done.**
 7. File copy: tar-based `cp.rs` + minimal upload/download dialogs.
 8. Metrics/graphs: metrics-server dynamic API + frontend polling + `MetricCard.vue` on the dashboard.
 
