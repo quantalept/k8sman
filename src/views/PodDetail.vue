@@ -7,6 +7,9 @@ import ExecTerminal from "../components/ExecTerminal.vue";
 import PortForwardManager from "../components/PortForwardManager.vue";
 import FileCopyManager from "../components/FileCopyManager.vue";
 import PodMetricsPanel from "../components/PodMetricsPanel.vue";
+import ResourceYamlEditor from "../components/ResourceYamlEditor.vue";
+import ResourceEventsTable from "../components/ResourceEventsTable.vue";
+import DeleteResourceButton from "../components/DeleteResourceButton.vue";
 import { listResources } from "../api/resources";
 import { useClusterStore } from "../stores/cluster";
 
@@ -43,6 +46,9 @@ const containerOptions = computed(() =>
 
 <template>
   <n-card :title="`Pod: ${podName}`">
+    <template #header-extra>
+      <DeleteResourceButton kind="Pod" :namespace="namespace" :name="podName" back-path="/pods" />
+    </template>
     <n-space vertical size="large">
       <n-text depth="3">Namespace: {{ namespace }}</n-text>
 
@@ -84,6 +90,12 @@ const containerOptions = computed(() =>
         </n-tab-pane>
         <n-tab-pane name="files" tab="Copy Files">
           <FileCopyManager :namespace="namespace" :pod="podName" :container="selectedContainer" />
+        </n-tab-pane>
+        <n-tab-pane name="yaml" tab="YAML">
+          <ResourceYamlEditor kind="Pod" :namespace="namespace" :name="podName" />
+        </n-tab-pane>
+        <n-tab-pane name="events" tab="Events">
+          <ResourceEventsTable :namespace="namespace" :involved-object-name="podName" />
         </n-tab-pane>
       </n-tabs>
       <n-text v-else depth="3">No containers found for this pod.</n-text>

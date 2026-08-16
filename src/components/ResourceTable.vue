@@ -13,7 +13,8 @@ const props = defineProps<{
 }>();
 
 const namespaceRef = toRef(props, "namespace");
-const { items, loading, error } = useResourceList(props.kind, namespaceRef);
+const kindRef = toRef(props, "kind");
+const { items, loading, error } = useResourceList(kindRef, namespaceRef);
 
 function age(obj: any): string {
   const ts = obj?.metadata?.creationTimestamp;

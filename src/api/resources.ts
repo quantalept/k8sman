@@ -20,8 +20,50 @@ export function listResources(
   contextName: string,
   kind: string,
   namespace?: string,
+  fieldSelector?: string,
 ): Promise<any[]> {
-  return invoke("list_resources", { contextName, kind, namespace });
+  return invoke("list_resources", { contextName, kind, namespace, fieldSelector });
+}
+
+export function getResource(
+  contextName: string,
+  kind: string,
+  namespace: string | undefined,
+  name: string,
+): Promise<any> {
+  return invoke("get_resource", { contextName, kind, namespace, name });
+}
+
+export function deleteResource(
+  contextName: string,
+  kind: string,
+  namespace: string | undefined,
+  name: string,
+): Promise<void> {
+  return invoke("delete_resource", { contextName, kind, namespace, name });
+}
+
+export function applyResource(contextName: string, yaml: string): Promise<any> {
+  return invoke("apply_resource", { contextName, yaml });
+}
+
+export function scaleResource(
+  contextName: string,
+  kind: string,
+  namespace: string | undefined,
+  name: string,
+  replicas: number,
+): Promise<any> {
+  return invoke("scale_resource", { contextName, kind, namespace, name, replicas });
+}
+
+export function restartRollout(
+  contextName: string,
+  kind: string,
+  namespace: string | undefined,
+  name: string,
+): Promise<any> {
+  return invoke("restart_rollout", { contextName, kind, namespace, name });
 }
 
 export function startWatch(
@@ -29,14 +71,16 @@ export function startWatch(
   kind: string,
   namespace: string | undefined,
   onEvent: (event: ResourceEvent) => void,
+  fieldSelector?: string,
 ): Promise<UnlistenFn> {
-  return invoke<string>("start_watch", { contextName, kind, namespace }).then((streamId) =>
-    listen<ResourceEvent>(`resource-event:${streamId}`, (e) => onEvent(e.payload)).then(
-      (unlisten) => () => {
-        unlisten();
-        void stopWatch(streamId);
-      },
-    ),
+  return invoke<string>("start_watch", { contextName, kind, namespace, fieldSelector }).then(
+    (streamId) =>
+      listen<ResourceEvent>(`resource-event:${streamId}`, (e) => onEvent(e.payload)).then(
+        (unlisten) => () => {
+          unlisten();
+          void stopWatch(streamId);
+        },
+      ),
   );
 }
 

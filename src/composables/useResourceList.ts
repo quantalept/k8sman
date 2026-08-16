@@ -1,4 +1,4 @@
-import { ref, watch, onScopeDispose, type Ref } from "vue";
+import { ref, watch, onScopeDispose, toValue, type MaybeRefOrGetter, type Ref } from "vue";
 import { listResources, startWatch, type ResourceEvent } from "../api/resources";
 import { useClusterStore } from "../stores/cluster";
 
@@ -11,7 +11,11 @@ function objectKey(obj: any): string {
  * Live list of a resource kind for the currently connected context, kept up to date via
  * a backend watch. Re-subscribes whenever the context, kind, or namespace changes.
  */
-export function useResourceList(kind: string, namespace?: Ref<string | undefined>) {
+export function useResourceList(
+  kind: MaybeRefOrGetter<string>,
+  namespace?: Ref<string | undefined>,
+  fieldSelector?: Ref<string | undefined>,
+) {
   const cluster = useClusterStore();
   const items = ref<any[]>([]);
   const loading = ref(false);
@@ -32,26 +36,34 @@ export function useResourceList(kind: string, namespace?: Ref<string | undefined
     }
 
     const ns = namespace?.value;
+    const selector = fieldSelector?.value;
     loading.value = true;
     error.value = null;
 
     try {
-      const initial = await listResources(contextName, kind, ns);
+      const kindValue = toValue(kind);
+      const initial = await listResources(contextName, kindValue, ns, selector);
       if (myGeneration !== generation) return;
 
       const byKey = new Map<string, any>(initial.map((obj) => [objectKey(obj), obj]));
       items.value = Array.from(byKey.values());
 
-      const unlisten = await startWatch(contextName, kind, ns, (event: ResourceEvent) => {
-        if (myGeneration !== generation) return;
-        const key = objectKey(event.object);
-        if (event.type === "upsert") {
-          byKey.set(key, event.object);
-        } else {
-          byKey.delete(key);
-        }
-        items.value = Array.from(byKey.values());
-      });
+      const unlisten = await startWatch(
+        contextName,
+        kindValue,
+        ns,
+        (event: ResourceEvent) => {
+          if (myGeneration !== generation) return;
+          const key = objectKey(event.object);
+          if (event.type === "upsert") {
+            byKey.set(key, event.object);
+          } else {
+            byKey.delete(key);
+          }
+          items.value = Array.from(byKey.values());
+        },
+        selector,
+      );
 
       if (myGeneration !== generation) {
         unlisten();
@@ -65,7 +77,11 @@ export function useResourceList(kind: string, namespace?: Ref<string | undefined
     }
   }
 
-  watch(() => [cluster.currentContext, kind, namespace?.value], subscribe, { immediate: true });
+  watch(
+    () => [cluster.currentContext, toValue(kind), namespace?.value, fieldSelector?.value],
+    subscribe,
+    { immediate: true },
+  );
 
   onScopeDispose(() => {
     generation++;

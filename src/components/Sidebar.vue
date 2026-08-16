@@ -4,16 +4,12 @@ import { useRoute, useRouter } from "vue-router";
 import { NIcon, NMenu, type MenuOption } from "naive-ui";
 import {
   GridOutline,
-  FolderOutline,
-  ServerOutline,
+  NotificationsOutline,
   CubeOutline,
-  GitNetworkOutline,
-  DocumentTextOutline,
-  LockClosedOutline,
-  SaveOutline,
   SwapHorizontalOutline,
   SettingsOutline,
 } from "@vicons/ionicons5";
+import { resourceKinds, type ResourceKindConfig } from "../resourceKinds";
 
 const route = useRoute();
 const router = useRouter();
@@ -22,15 +18,33 @@ function renderIcon(icon: any) {
   return () => h(NIcon, null, { default: () => h(icon) });
 }
 
+const GROUP_ORDER: ResourceKindConfig["group"][] = [
+  "Cluster",
+  "Workloads",
+  "Network",
+  "Config",
+  "Storage",
+];
+
+function groupMenu(group: ResourceKindConfig["group"]): MenuOption | null {
+  const children: MenuOption[] = resourceKinds
+    .filter((r) => r.group === group)
+    .map((r) => ({ label: r.label, key: `/${r.route}`, icon: renderIcon(r.icon) }));
+
+  // Pods aren't in the registry (they have a bespoke view with metrics/exec/logs/etc.),
+  // but they're still a workload kind and belong in the same nav group as the rest.
+  if (group === "Workloads") {
+    children.unshift({ label: "Pods", key: "/pods", icon: renderIcon(CubeOutline) });
+  }
+
+  if (children.length === 0) return null;
+  return { type: "group", label: group, key: `group-${group}`, children };
+}
+
 const menuOptions: MenuOption[] = [
   { label: "Dashboard", key: "/dashboard", icon: renderIcon(GridOutline) },
-  { label: "Namespaces", key: "/namespaces", icon: renderIcon(FolderOutline) },
-  { label: "Nodes", key: "/nodes", icon: renderIcon(ServerOutline) },
-  { label: "Pods", key: "/pods", icon: renderIcon(CubeOutline) },
-  { label: "Services", key: "/services", icon: renderIcon(GitNetworkOutline) },
-  { label: "ConfigMaps", key: "/configmaps", icon: renderIcon(DocumentTextOutline) },
-  { label: "Secrets", key: "/secrets", icon: renderIcon(LockClosedOutline) },
-  { label: "Storage", key: "/storage", icon: renderIcon(SaveOutline) },
+  { label: "Events", key: "/events", icon: renderIcon(NotificationsOutline) },
+  ...GROUP_ORDER.map(groupMenu).filter((g): g is MenuOption => g !== null),
   { label: "Port Forwards", key: "/portforwards", icon: renderIcon(SwapHorizontalOutline) },
   { label: "Settings", key: "/settings", icon: renderIcon(SettingsOutline) },
 ];
