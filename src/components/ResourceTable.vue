@@ -7,6 +7,8 @@ const props = defineProps<{
   kind: string;
   namespace?: string;
   labelSelector?: string;
+  /** Client-side substring filter on the resource name. */
+  search?: string;
   /** Extra columns beyond the built-in Name / Namespace / Age. */
   columns?: DataTableColumns<any>;
   showNamespace?: boolean;
@@ -17,6 +19,12 @@ const namespaceRef = toRef(props, "namespace");
 const kindRef = toRef(props, "kind");
 const labelSelectorRef = toRef(props, "labelSelector");
 const { items, loading, error } = useResourceList(kindRef, namespaceRef, undefined, labelSelectorRef);
+
+const filteredItems = computed(() => {
+  const term = props.search?.trim().toLowerCase();
+  if (!term) return items.value;
+  return items.value.filter((obj: any) => obj.metadata?.name?.toLowerCase().includes(term));
+});
 
 function age(obj: any): string {
   const ts = obj?.metadata?.creationTimestamp;
@@ -53,13 +61,13 @@ const rowKey = (row: any) => row.metadata?.uid ?? `${row.metadata?.namespace}/${
     <n-alert v-if="error" type="error" :title="error" closable style="margin-bottom: 12px" />
     <n-data-table
       :columns="columns"
-      :data="items"
+      :data="filteredItems"
       :loading="loading"
       :row-key="rowKey"
       :row-props="rowProps"
       :bordered="false"
       size="small"
     />
-    <n-text v-if="!loading && items.length === 0 && !error" depth="3">No resources found.</n-text>
+    <n-text v-if="!loading && filteredItems.length === 0 && !error" depth="3">No resources found.</n-text>
   </div>
 </template>

@@ -7,13 +7,21 @@ import SavedViewControls from "../components/SavedViewControls.vue";
 import { useResourceList } from "../composables/useResourceList";
 import { usePodMetrics } from "../composables/usePodMetrics";
 import { formatCores, formatBytes } from "../api/metrics";
+import { looksLikeLabelSelector } from "../labelSelector";
 
 const route = useRoute();
 const router = useRouter();
 const namespace = ref<string>("");
 const effectiveNamespace = computed(() => namespace.value || undefined);
 const labelSelector = ref<string>("");
-const effectiveLabelSelector = computed(() => labelSelector.value.trim() || undefined);
+const trimmedFilter = computed(() => labelSelector.value.trim());
+const isSelectorSyntax = computed(() => looksLikeLabelSelector(trimmedFilter.value));
+// The same input does double duty: `key=value` syntax narrows via the API as a real label
+// selector, anything else is a client-side substring search on the resource name.
+const effectiveLabelSelector = computed(() =>
+  isSelectorSyntax.value ? trimmedFilter.value : undefined,
+);
+const effectiveSearch = computed(() => (isSelectorSyntax.value ? undefined : trimmedFilter.value));
 
 const { items: namespaces } = useResourceList("Namespace");
 const { usage: podUsage, supported: metricsSupported } = usePodMetrics(effectiveNamespace);
@@ -101,8 +109,8 @@ function onRowProps(row: any) {
         />
         <n-input
           v-model:value="labelSelector"
-          placeholder="Label selector, e.g. app=foo,tier=bar"
-          style="width: 280px"
+          placeholder="Search by name, or label selector (app=foo,tier=bar)"
+          style="width: 320px"
           clearable
         />
       </n-space>
@@ -120,6 +128,7 @@ function onRowProps(row: any) {
         kind="Pod"
         :namespace="effectiveNamespace"
         :label-selector="effectiveLabelSelector"
+        :search="effectiveSearch"
         :columns="columns"
         :row-props="onRowProps"
       />
