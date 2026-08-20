@@ -33,11 +33,22 @@ the registry that drives both list views and detail-page actions.
 
 ## Tier 2 — Multi-cluster & productivity
 
+**Done.**
+
 - Concurrent multi-cluster connections (tabs) instead of switch-and-disconnect
   — the client cache in `AppState` already supports holding multiple; this is
-  mostly a frontend/UX change.
-- Command palette (Cmd+K) + global resource search.
-- Label/field selectors, saved views, pinned/recent resources.
+  mostly a frontend/UX change. **Done** as a lightweight tab strip
+  (`ClusterSwitcher.vue`/`stores/cluster.ts`): switching tabs changes which
+  cluster the *current* page queries, no reconnect delay. Fully independent
+  per-tab navigation state was scoped out as a much bigger build.
+- Command palette (Cmd+K) + global resource search. **Done**
+  (`CommandPalette.vue`) — navigation, saved views, and a debounced
+  cross-kind resource search (name substring match, capped results).
+- Label/field selectors, saved views, pinned/recent resources. **Done** —
+  label selectors on `list_resources`/`start_watch` (mirrors the Tier 1
+  `field_selector` addition); saved views and pinned/recent persisted via a
+  frontend-owned `ui-state.json` store (`api/uiState.ts`), separate from the
+  backend's own kubeconfig/context settings store.
 
 ## Tier 3 — Ecosystem integrations
 
@@ -63,6 +74,6 @@ the registry that drives both list views and detail-page actions.
 
 ## Status
 
-Not started. Tiers are taken up one at a time; this file is updated with
-**Done.** markers per item as they land, matching the convention in
+Tiers 1 and 2 done. Tiers are taken up one at a time; this file is updated
+with **Done.** markers per item as they land, matching the convention in
 `docs/architecture-plan.md`.

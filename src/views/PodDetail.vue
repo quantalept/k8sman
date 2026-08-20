@@ -10,11 +10,14 @@ import PodMetricsPanel from "../components/PodMetricsPanel.vue";
 import ResourceYamlEditor from "../components/ResourceYamlEditor.vue";
 import ResourceEventsTable from "../components/ResourceEventsTable.vue";
 import DeleteResourceButton from "../components/DeleteResourceButton.vue";
+import PinButton from "../components/PinButton.vue";
 import { listResources } from "../api/resources";
 import { useClusterStore } from "../stores/cluster";
+import { usePinnedStore } from "../stores/pinned";
 
 const route = useRoute();
 const cluster = useClusterStore();
+const pinned = usePinnedStore();
 
 const namespace = computed(() => String(route.params.namespace));
 const podName = computed(() => String(route.params.name));
@@ -36,8 +39,14 @@ async function loadContainers() {
   }
 }
 
-onMounted(loadContainers);
+onMounted(() => {
+  loadContainers();
+  pinned.recordVisit({ kind: "Pod", namespace: namespace.value, name: podName.value });
+});
 watch([namespace, podName, () => cluster.currentContext], loadContainers);
+watch([namespace, podName], () =>
+  pinned.recordVisit({ kind: "Pod", namespace: namespace.value, name: podName.value }),
+);
 
 const containerOptions = computed(() =>
   containers.value.map((name) => ({ label: name, value: name })),
@@ -47,7 +56,10 @@ const containerOptions = computed(() =>
 <template>
   <n-card :title="`Pod: ${podName}`">
     <template #header-extra>
-      <DeleteResourceButton kind="Pod" :namespace="namespace" :name="podName" back-path="/pods" />
+      <n-space align="center">
+        <PinButton kind="Pod" :namespace="namespace" :name="podName" />
+        <DeleteResourceButton kind="Pod" :namespace="namespace" :name="podName" back-path="/pods" />
+      </n-space>
     </template>
     <n-space vertical size="large">
       <n-text depth="3">Namespace: {{ namespace }}</n-text>

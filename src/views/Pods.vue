@@ -1,15 +1,19 @@
 <script setup lang="ts">
-import { h, ref, computed } from "vue";
-import { useRouter } from "vue-router";
-import { NCard, NTag, NSelect, NSpace, NText } from "naive-ui";
+import { h, ref, computed, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { NCard, NTag, NSelect, NSpace, NText, NInput } from "naive-ui";
 import ResourceTable from "../components/ResourceTable.vue";
+import SavedViewControls from "../components/SavedViewControls.vue";
 import { useResourceList } from "../composables/useResourceList";
 import { usePodMetrics } from "../composables/usePodMetrics";
 import { formatCores, formatBytes } from "../api/metrics";
 
+const route = useRoute();
 const router = useRouter();
 const namespace = ref<string>("");
 const effectiveNamespace = computed(() => namespace.value || undefined);
+const labelSelector = ref<string>("");
+const effectiveLabelSelector = computed(() => labelSelector.value.trim() || undefined);
 
 const { items: namespaces } = useResourceList("Namespace");
 const { usage: podUsage, supported: metricsSupported } = usePodMetrics(effectiveNamespace);
@@ -59,6 +63,24 @@ const columns = [
   },
 ];
 
+// Seed filters from ?ns=&labels= when navigating here (e.g. from the command palette's
+// saved-view entries).
+watch(
+  () => route.query,
+  () => {
+    const ns = route.query.ns;
+    const labels = route.query.labels;
+    if (typeof ns === "string") namespace.value = ns;
+    if (typeof labels === "string") labelSelector.value = labels;
+  },
+  { immediate: true },
+);
+
+function applySavedView(view: { namespace?: string; labelSelector?: string }) {
+  namespace.value = view.namespace ?? "";
+  labelSelector.value = view.labelSelector ?? "";
+}
+
 function onRowProps(row: any) {
   return {
     style: "cursor: pointer",
@@ -70,16 +92,37 @@ function onRowProps(row: any) {
 <template>
   <n-card title="Pods">
     <n-space vertical>
-      <n-select
-        v-model:value="namespace"
-        :options="namespaceOptions"
-        style="width: 240px"
-        placeholder="All namespaces"
+      <n-space align="center">
+        <n-select
+          v-model:value="namespace"
+          :options="namespaceOptions"
+          style="width: 240px"
+          placeholder="All namespaces"
+        />
+        <n-input
+          v-model:value="labelSelector"
+          placeholder="Label selector, e.g. app=foo,tier=bar"
+          style="width: 280px"
+          clearable
+        />
+      </n-space>
+      <SavedViewControls
+        kind="Pod"
+        route="pods"
+        :namespace="effectiveNamespace"
+        :label-selector="effectiveLabelSelector"
+        @apply="applySavedView"
       />
       <n-text v-if="!metricsSupported" depth="3">
         Metrics unavailable - is metrics-server installed on this cluster?
       </n-text>
-      <ResourceTable kind="Pod" :namespace="effectiveNamespace" :columns="columns" :row-props="onRowProps" />
+      <ResourceTable
+        kind="Pod"
+        :namespace="effectiveNamespace"
+        :label-selector="effectiveLabelSelector"
+        :columns="columns"
+        :row-props="onRowProps"
+      />
     </n-space>
   </n-card>
 </template>

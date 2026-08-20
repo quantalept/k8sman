@@ -13,6 +13,10 @@ import {
 } from "naive-ui";
 import Sidebar from "./components/Sidebar.vue";
 import ClusterSwitcher from "./components/ClusterSwitcher.vue";
+import CommandPalette from "./components/CommandPalette.vue";
+import { registerCommandPaletteShortcut } from "./composables/useCommandPalette";
+
+registerCommandPaletteShortcut();
 </script>
 
 <template>
@@ -20,6 +24,7 @@ import ClusterSwitcher from "./components/ClusterSwitcher.vue";
     <n-global-style />
     <n-message-provider>
       <n-dialog-provider>
+        <CommandPalette />
         <n-layout style="height: 100vh">
           <n-layout-header class="app-header" bordered>
             <n-text strong class="app-title">k8sman</n-text>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { computed, onMounted, h } from "vue";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
   NCard,
@@ -11,11 +11,14 @@ import {
   type DataTableColumns,
 } from "naive-ui";
 import { useClusterStore, type ContextInfo } from "../stores/cluster";
+import { useSavedViewsStore, type SavedView } from "../stores/savedViews";
 
 const store = useClusterStore();
+const savedViews = useSavedViewsStore();
 
 onMounted(() => {
   store.loadContexts();
+  savedViews.load();
 });
 
 async function importKubeconfig() {
@@ -40,6 +43,23 @@ const contextColumns: DataTableColumns<ContextInfo> = [
 ];
 
 const contexts = computed(() => store.contexts);
+
+const savedViewColumns: DataTableColumns<SavedView> = [
+  { title: "Name", key: "name" },
+  { title: "Kind", key: "kind" },
+  { title: "Namespace", key: "namespace", render: (row) => row.namespace ?? "all" },
+  { title: "Label selector", key: "labelSelector", render: (row) => row.labelSelector ?? "-" },
+  {
+    title: "",
+    key: "actions",
+    render: (row) =>
+      h(
+        NButton,
+        { size: "tiny", tertiary: true, type: "error", onClick: () => savedViews.remove(row.id) },
+        { default: () => "Delete" },
+      ),
+  },
+];
 </script>
 
 <template>
@@ -57,6 +77,15 @@ const contexts = computed(() => store.contexts);
 
     <n-card title="Available contexts">
       <n-data-table :columns="contextColumns" :data="contexts" :bordered="false" size="small" />
+    </n-card>
+
+    <n-card title="Saved Views">
+      <n-data-table
+        :columns="savedViewColumns"
+        :data="savedViews.views"
+        :bordered="false"
+        size="small"
+      />
     </n-card>
   </n-space>
 </template>

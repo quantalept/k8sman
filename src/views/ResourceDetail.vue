@@ -7,12 +7,15 @@ import ResourceEventsTable from "../components/ResourceEventsTable.vue";
 import DeleteResourceButton from "../components/DeleteResourceButton.vue";
 import ScaleControl from "../components/ScaleControl.vue";
 import RestartButton from "../components/RestartButton.vue";
+import PinButton from "../components/PinButton.vue";
 import { getResource } from "../api/resources";
 import { useClusterStore } from "../stores/cluster";
+import { usePinnedStore } from "../stores/pinned";
 import { findResourceKindByKind } from "../resourceKinds";
 
 const route = useRoute();
 const cluster = useClusterStore();
+const pinned = usePinnedStore();
 
 const kind = computed(() => String(route.params.kind));
 const name = computed(() => String(route.params.name));
@@ -36,8 +39,14 @@ async function loadReplicas() {
   }
 }
 
-onMounted(loadReplicas);
+onMounted(() => {
+  loadReplicas();
+  pinned.recordVisit({ kind: kind.value, namespace: namespace.value, name: name.value });
+});
 watch([kind, name, namespace, () => cluster.currentContext], loadReplicas);
+watch([kind, name, namespace], () =>
+  pinned.recordVisit({ kind: kind.value, namespace: namespace.value, name: name.value }),
+);
 </script>
 
 <template>
@@ -53,6 +62,7 @@ watch([kind, name, namespace, () => cluster.currentContext], loadReplicas);
           @scaled="loadReplicas"
         />
         <RestartButton v-if="config?.restartable" :kind="kind" :namespace="namespace" :name="name" />
+        <PinButton :kind="kind" :namespace="namespace" :name="name" />
         <DeleteResourceButton :kind="kind" :namespace="namespace" :name="name" />
       </n-space>
     </template>

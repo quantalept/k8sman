@@ -126,7 +126,8 @@ pub async fn list_resource_kinds(
 }
 
 /// List all objects of a given kind, optionally scoped to a namespace and/or filtered by a
-/// field selector (e.g. `involvedObject.name=foo` for Events), as raw JSON.
+/// field selector (e.g. `involvedObject.name=foo` for Events) and/or a label selector
+/// (e.g. `app=foo,tier=bar`), as raw JSON.
 #[tauri::command]
 pub async fn list_resources(
     state: State<'_, AppState>,
@@ -134,6 +135,7 @@ pub async fn list_resources(
     kind: String,
     namespace: Option<String>,
     field_selector: Option<String>,
+    label_selector: Option<String>,
 ) -> AppResult<Vec<Value>> {
     let client = get_client(&state, &context_name)?;
     let discovery = discovery_for(&state, &context_name).await?;
@@ -143,6 +145,9 @@ pub async fn list_resources(
     let mut lp = ListParams::default();
     if let Some(selector) = field_selector {
         lp = lp.fields(&selector);
+    }
+    if let Some(selector) = label_selector {
+        lp = lp.labels(&selector);
     }
     let list = api.list(&lp).await?;
     Ok(list
@@ -288,6 +293,7 @@ pub async fn start_watch(
     kind: String,
     namespace: Option<String>,
     field_selector: Option<String>,
+    label_selector: Option<String>,
 ) -> AppResult<String> {
     let client = get_client(&state, &context_name)?;
     let discovery = discovery_for(&state, &context_name).await?;
@@ -302,6 +308,9 @@ pub async fn start_watch(
         let mut watch_config = watcher::Config::default();
         if let Some(selector) = field_selector {
             watch_config = watch_config.fields(&selector);
+        }
+        if let Some(selector) = label_selector {
+            watch_config = watch_config.labels(&selector);
         }
         let mut stream = Box::pin(watcher(api, watch_config).default_backoff());
         while let Some(event) = stream.next().await {

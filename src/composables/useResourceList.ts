@@ -15,6 +15,7 @@ export function useResourceList(
   kind: MaybeRefOrGetter<string>,
   namespace?: Ref<string | undefined>,
   fieldSelector?: Ref<string | undefined>,
+  labelSelector?: Ref<string | undefined>,
 ) {
   const cluster = useClusterStore();
   const items = ref<any[]>([]);
@@ -36,13 +37,14 @@ export function useResourceList(
     }
 
     const ns = namespace?.value;
-    const selector = fieldSelector?.value;
+    const fieldSel = fieldSelector?.value;
+    const labelSel = labelSelector?.value;
     loading.value = true;
     error.value = null;
 
     try {
       const kindValue = toValue(kind);
-      const initial = await listResources(contextName, kindValue, ns, selector);
+      const initial = await listResources(contextName, kindValue, ns, fieldSel, labelSel);
       if (myGeneration !== generation) return;
 
       const byKey = new Map<string, any>(initial.map((obj) => [objectKey(obj), obj]));
@@ -62,7 +64,8 @@ export function useResourceList(
           }
           items.value = Array.from(byKey.values());
         },
-        selector,
+        fieldSel,
+        labelSel,
       );
 
       if (myGeneration !== generation) {
@@ -78,7 +81,13 @@ export function useResourceList(
   }
 
   watch(
-    () => [cluster.currentContext, toValue(kind), namespace?.value, fieldSelector?.value],
+    () => [
+      cluster.currentContext,
+      toValue(kind),
+      namespace?.value,
+      fieldSelector?.value,
+      labelSelector?.value,
+    ],
     subscribe,
     { immediate: true },
   );

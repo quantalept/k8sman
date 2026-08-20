@@ -21,8 +21,9 @@ export function listResources(
   kind: string,
   namespace?: string,
   fieldSelector?: string,
+  labelSelector?: string,
 ): Promise<any[]> {
-  return invoke("list_resources", { contextName, kind, namespace, fieldSelector });
+  return invoke("list_resources", { contextName, kind, namespace, fieldSelector, labelSelector });
 }
 
 export function getResource(
@@ -72,8 +73,15 @@ export function startWatch(
   namespace: string | undefined,
   onEvent: (event: ResourceEvent) => void,
   fieldSelector?: string,
+  labelSelector?: string,
 ): Promise<UnlistenFn> {
-  return invoke<string>("start_watch", { contextName, kind, namespace, fieldSelector }).then(
+  return invoke<string>("start_watch", {
+    contextName,
+    kind,
+    namespace,
+    fieldSelector,
+    labelSelector,
+  }).then(
     (streamId) =>
       listen<ResourceEvent>(`resource-event:${streamId}`, (e) => onEvent(e.payload)).then(
         (unlisten) => () => {

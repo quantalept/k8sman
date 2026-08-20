@@ -6,6 +6,7 @@ import { useResourceList } from "../composables/useResourceList";
 const props = defineProps<{
   kind: string;
   namespace?: string;
+  labelSelector?: string;
   /** Extra columns beyond the built-in Name / Namespace / Age. */
   columns?: DataTableColumns<any>;
   showNamespace?: boolean;
@@ -14,7 +15,8 @@ const props = defineProps<{
 
 const namespaceRef = toRef(props, "namespace");
 const kindRef = toRef(props, "kind");
-const { items, loading, error } = useResourceList(kindRef, namespaceRef);
+const labelSelectorRef = toRef(props, "labelSelector");
+const { items, loading, error } = useResourceList(kindRef, namespaceRef, undefined, labelSelectorRef);
 
 function age(obj: any): string {
   const ts = obj?.metadata?.creationTimestamp;

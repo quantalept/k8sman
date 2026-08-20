@@ -1,12 +1,22 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { NGrid, NGridItem, NAlert, NText } from "naive-ui";
+import { computed, onMounted } from "vue";
+import { NGrid, NGridItem, NAlert, NText, NCard, NSpace, NTag, NEmpty } from "naive-ui";
 import MetricCard from "../components/MetricCard.vue";
 import { useClusterMetrics } from "../composables/useClusterMetrics";
 import { useClusterStore } from "../stores/cluster";
+import { usePinnedStore, type PinnedResource } from "../stores/pinned";
 
 const cluster = useClusterStore();
+const pinned = usePinnedStore();
 const { samples, error, supported } = useClusterMetrics();
+
+onMounted(() => pinned.load());
+
+function resourcePath(r: PinnedResource): string {
+  if (r.kind === "Pod") return `/pods/${r.namespace}/${r.name}`;
+  const query = r.namespace ? `?ns=${encodeURIComponent(r.namespace)}` : "";
+  return `/resources/${r.kind}/${r.name}${query}`;
+}
 
 const timestamps = computed(() => samples.value.map((s) => Math.floor(s.timestamp / 1000)));
 
@@ -42,4 +52,24 @@ const memoryLabel = computed(() =>
       <MetricCard title="Memory Usage" :value="memoryLabel" color="#199e70" :series="memorySeries" />
     </n-grid-item>
   </n-grid>
+
+  <n-card title="Pinned & Recent" style="margin-top: 16px">
+    <n-empty v-if="pinned.pinned.length === 0 && pinned.recent.length === 0" description="Nothing pinned or viewed yet" />
+    <n-space v-else vertical :size="6">
+      <n-space v-for="r in pinned.pinned" :key="`pinned-${r.kind}-${r.namespace}-${r.name}`" align="center">
+        <n-tag type="warning" size="small" round>pinned</n-tag>
+        <router-link :to="resourcePath(r)">{{ r.kind }}/{{ r.name }}</router-link>
+        <n-text v-if="r.namespace" depth="3">({{ r.namespace }})</n-text>
+      </n-space>
+      <n-space
+        v-for="r in pinned.recent.filter((r) => !pinned.isPinned(r))"
+        :key="`recent-${r.kind}-${r.namespace}-${r.name}`"
+        align="center"
+      >
+        <n-tag size="small" round>recent</n-tag>
+        <router-link :to="resourcePath(r)">{{ r.kind }}/{{ r.name }}</router-link>
+        <n-text v-if="r.namespace" depth="3">({{ r.namespace }})</n-text>
+      </n-space>
+    </n-space>
+  </n-card>
 </template>
