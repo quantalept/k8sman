@@ -5,6 +5,7 @@ export interface ResourceKindRef {
   group: string;
   version: string;
   kind: string;
+  plural: string;
   namespaced: boolean;
 }
 
@@ -14,6 +15,21 @@ export type ResourceEvent =
 
 export function listResourceKinds(contextName: string): Promise<ResourceKindRef[]> {
   return invoke("list_resource_kinds", { contextName });
+}
+
+export interface PrinterColumn {
+  name: string;
+  type: string;
+  jsonPath: string;
+}
+
+export function getCrdPrinterColumns(
+  contextName: string,
+  group: string,
+  plural: string,
+  version: string,
+): Promise<PrinterColumn[]> {
+  return invoke("get_crd_printer_columns", { contextName, group, plural, version });
 }
 
 export function listResources(

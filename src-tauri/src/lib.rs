@@ -1,10 +1,13 @@
 mod cluster;
 mod cp;
+mod crds;
 mod error;
 mod exec;
+mod helm;
 mod logs;
 mod metrics;
 mod portforward;
+mod rbac;
 mod resources;
 mod state;
 
@@ -13,6 +16,11 @@ use state::AppState;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tracing_subscriber::fmt::init();
+
+    // kube's TLS stack and reqwest's (used for Prometheus queries) each pull in rustls with
+    // their own crypto backend choice; without an explicit default, rustls can't pick one
+    // unambiguously at runtime and panics on first use. Install one up front.
+    let _ = rustls::crypto::CryptoProvider::install_default(rustls::crypto::aws_lc_rs::default_provider());
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -47,6 +55,14 @@ pub fn run() {
             cp::cp_from_pod,
             metrics::get_pod_metrics,
             metrics::get_node_metrics,
+            metrics::get_prometheus_url,
+            metrics::set_prometheus_url,
+            metrics::query_prometheus_range,
+            rbac::get_subject_rules,
+            crds::get_crd_printer_columns,
+            helm::list_helm_releases,
+            helm::get_helm_release,
+            helm::list_helm_release_history,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

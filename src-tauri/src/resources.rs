@@ -21,6 +21,7 @@ pub struct ResourceKindRef {
     pub group: String,
     pub version: String,
     pub kind: String,
+    pub plural: String,
     pub namespaced: bool,
 }
 
@@ -118,6 +119,7 @@ pub async fn list_resource_kinds(
                 group: ar.group.clone(),
                 version: ar.version.clone(),
                 kind: ar.kind.clone(),
+                plural: ar.plural.clone(),
                 namespaced: caps.scope == Scope::Namespaced,
             });
         }

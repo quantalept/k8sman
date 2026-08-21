@@ -16,6 +16,17 @@ const routes = [
     name: "resource-detail",
     component: () => import("../views/ResourceDetail.vue"),
   },
+  {
+    path: "/custom/:group/:version/:kind",
+    name: "custom-resource-list",
+    component: () => import("../views/CustomResourceList.vue"),
+  },
+  { path: "/helm", name: "helm-releases", component: () => import("../views/HelmReleases.vue") },
+  {
+    path: "/helm/:namespace/:name",
+    name: "helm-release-detail",
+    component: () => import("../views/HelmReleaseDetail.vue"),
+  },
   { path: "/portforwards", name: "portforwards", component: () => import("../views/PortForwards.vue") },
   { path: "/settings", name: "settings", component: () => import("../views/Settings.vue") },
 ];

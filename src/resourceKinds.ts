@@ -16,6 +16,11 @@ import {
   SaveOutline,
   BookmarkOutline,
   TrendingUpOutline,
+  PersonOutline,
+  KeyOutline,
+  ShieldCheckmarkOutline,
+  LinkOutline,
+  GitCompareOutline,
 } from "@vicons/ionicons5";
 
 export interface ResourceKindConfig {
@@ -27,7 +32,7 @@ export interface ResourceKindConfig {
   namespaced: boolean;
   icon: Component;
   /** Sidebar section grouping. */
-  group: "Cluster" | "Workloads" | "Network" | "Config" | "Storage";
+  group: "Cluster" | "Workloads" | "Network" | "Config" | "Storage" | "Access Control";
   /** Whether ResourceDetail should show a replica-count Scale control. */
   scalable?: boolean;
   /** Whether ResourceDetail should show a "Restart" (rollout restart) button. */
@@ -35,6 +40,33 @@ export interface ResourceKindConfig {
   /** Extra columns beyond ResourceTable's built-in Name/Namespace/Age. */
   columns?: DataTableColumns<any>;
 }
+
+// The stable set of built-in Kubernetes API groups. Anything discovery returns outside this
+// set is treated as a CRD (verified against a real cluster: correctly separates cert-manager,
+// calico, istio, nvidia, and node-feature-discovery groups from the built-ins).
+export const KNOWN_BUILTIN_GROUPS = new Set([
+  "",
+  "apps",
+  "batch",
+  "networking.k8s.io",
+  "rbac.authorization.k8s.io",
+  "autoscaling",
+  "policy",
+  "storage.k8s.io",
+  "apiextensions.k8s.io",
+  "metrics.k8s.io",
+  "admissionregistration.k8s.io",
+  "apiregistration.k8s.io",
+  "authentication.k8s.io",
+  "authorization.k8s.io",
+  "certificates.k8s.io",
+  "coordination.k8s.io",
+  "discovery.k8s.io",
+  "events.k8s.io",
+  "flowcontrol.apiserver.k8s.io",
+  "node.k8s.io",
+  "scheduling.k8s.io",
+]);
 
 function statusTag(text: string, type: "success" | "warning" | "error" | "default") {
   return h(NTag, { type, size: "small", round: true }, { default: () => text });
@@ -283,6 +315,66 @@ export const resourceKinds: ResourceKindConfig[] = [
         title: "Capacity",
         key: "capacity",
         render: (row: any) => row.status?.capacity?.storage ?? "-",
+      },
+    ],
+  },
+  {
+    kind: "ServiceAccount",
+    route: "serviceaccounts",
+    label: "Service Accounts",
+    namespaced: true,
+    icon: PersonOutline,
+    group: "Access Control",
+  },
+  {
+    kind: "Role",
+    route: "roles",
+    label: "Roles",
+    namespaced: true,
+    icon: KeyOutline,
+    group: "Access Control",
+    columns: [
+      { title: "Rules", key: "rules", render: (row: any) => (row.rules ?? []).length },
+    ],
+  },
+  {
+    kind: "ClusterRole",
+    route: "clusterroles",
+    label: "Cluster Roles",
+    namespaced: false,
+    icon: ShieldCheckmarkOutline,
+    group: "Access Control",
+    columns: [
+      { title: "Rules", key: "rules", render: (row: any) => (row.rules ?? []).length },
+    ],
+  },
+  {
+    kind: "RoleBinding",
+    route: "rolebindings",
+    label: "Role Bindings",
+    namespaced: true,
+    icon: LinkOutline,
+    group: "Access Control",
+    columns: [
+      {
+        title: "Role",
+        key: "role",
+        render: (row: any) => `${row.roleRef?.kind ?? "-"}/${row.roleRef?.name ?? "-"}`,
+      },
+    ],
+  },
+  {
+    kind: "ClusterRoleBinding",
+    route: "clusterrolebindings",
+    label: "Cluster Role Bindings",
+    namespaced: false,
+    icon: GitCompareOutline,
+    group: "Access Control",
+    columns: [
+      {
+        title: "Role",
+        key: "role",
+        render: (row: any) => `${row.roleRef?.kind ?? "-"}/${row.roleRef?.name ?? "-"}`,
       },
     ],
   },

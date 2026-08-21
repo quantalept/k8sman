@@ -8,6 +8,35 @@ export function getNodeMetrics(contextName: string): Promise<any[]> {
   return invoke("get_node_metrics", { contextName });
 }
 
+export function getPrometheusUrl(contextName: string): Promise<string | undefined> {
+  return invoke("get_prometheus_url", { contextName });
+}
+
+export function setPrometheusUrl(contextName: string, url: string): Promise<void> {
+  return invoke("set_prometheus_url", { contextName, url });
+}
+
+export interface MetricPoint {
+  timestamp: number;
+  value: number;
+}
+
+export function queryPrometheusRange(
+  prometheusUrl: string,
+  promql: string,
+  startUnix: number,
+  endUnix: number,
+  stepSeconds: number,
+): Promise<MetricPoint[]> {
+  return invoke("query_prometheus_range", {
+    prometheusUrl,
+    promql,
+    startUnix,
+    endUnix,
+    stepSeconds,
+  });
+}
+
 /** Parses a Kubernetes CPU quantity ("500m", "2", "480800u", "3750933n") into cores. */
 export function parseCpuQuantity(value: string | undefined): number {
   if (!value) return 0;

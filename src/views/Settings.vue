@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, h } from "vue";
+import { computed, onMounted, watch, ref, h } from "vue";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
   NCard,
@@ -8,18 +8,42 @@ import {
   NSpace,
   NText,
   NAlert,
+  NInput,
+  useMessage,
   type DataTableColumns,
 } from "naive-ui";
 import { useClusterStore, type ContextInfo } from "../stores/cluster";
 import { useSavedViewsStore, type SavedView } from "../stores/savedViews";
+import { getPrometheusUrl, setPrometheusUrl } from "../api/metrics";
 
 const store = useClusterStore();
 const savedViews = useSavedViewsStore();
+const message = useMessage();
 
 onMounted(() => {
   store.loadContexts();
   savedViews.load();
 });
+
+const prometheusUrls = ref<Record<string, string>>({});
+
+async function loadPrometheusUrls() {
+  for (const ctx of store.contexts) {
+    if (ctx.name in prometheusUrls.value) continue;
+    prometheusUrls.value[ctx.name] = (await getPrometheusUrl(ctx.name)) ?? "";
+  }
+}
+
+watch(() => store.contexts, loadPrometheusUrls, { immediate: true });
+
+async function savePrometheusUrl(contextName: string) {
+  try {
+    await setPrometheusUrl(contextName, prometheusUrls.value[contextName] ?? "");
+    message.success(`Saved Prometheus URL for ${contextName}`);
+  } catch (e) {
+    message.error(String(e));
+  }
+}
 
 async function importKubeconfig() {
   const selected = await open({
@@ -77,6 +101,26 @@ const savedViewColumns: DataTableColumns<SavedView> = [
 
     <n-card title="Available contexts">
       <n-data-table :columns="contextColumns" :data="contexts" :bordered="false" size="small" />
+    </n-card>
+
+    <n-card title="Prometheus">
+      <n-space vertical>
+        <n-text depth="3">
+          Optional. Point at a Prometheus endpoint already reachable from this machine (e.g.
+          via your own `kubectl port-forward` or an ingress) to get real historical metrics
+          instead of point-in-time metrics-server polling.
+        </n-text>
+        <n-space v-for="ctx in store.contexts" :key="ctx.name" align="center">
+          <n-text style="width: 160px">{{ ctx.name }}</n-text>
+          <n-input
+            v-model:value="prometheusUrls[ctx.name]"
+            placeholder="http://localhost:9090"
+            style="width: 320px"
+            clearable
+          />
+          <n-button size="tiny" @click="savePrometheusUrl(ctx.name)">Save</n-button>
+        </n-space>
+      </n-space>
     </n-card>
 
     <n-card title="Saved Views">

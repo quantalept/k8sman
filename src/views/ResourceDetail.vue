@@ -8,6 +8,7 @@ import DeleteResourceButton from "../components/DeleteResourceButton.vue";
 import ScaleControl from "../components/ScaleControl.vue";
 import RestartButton from "../components/RestartButton.vue";
 import PinButton from "../components/PinButton.vue";
+import RbacPermissionsTable from "../components/RbacPermissionsTable.vue";
 import { getResource } from "../api/resources";
 import { useClusterStore } from "../stores/cluster";
 import { usePinnedStore } from "../stores/pinned";
@@ -74,6 +75,9 @@ watch([kind, name, namespace], () =>
         </n-tab-pane>
         <n-tab-pane name="events" tab="Events">
           <ResourceEventsTable :namespace="namespace" :involved-object-name="name" />
+        </n-tab-pane>
+        <n-tab-pane v-if="kind === 'ServiceAccount'" name="permissions" tab="Permissions">
+          <RbacPermissionsTable :namespace="namespace" :name="name" />
         </n-tab-pane>
       </n-tabs>
     </n-space>

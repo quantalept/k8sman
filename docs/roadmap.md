@@ -52,12 +52,36 @@ the registry that drives both list views and detail-page actions.
 
 ## Tier 3 — Ecosystem integrations
 
-- CRD-aware generic UI (discovery already returns them; needs a "Custom
-  Resources" nav section + CRD printer-column support).
-- Helm releases (list/values/history/rollback).
-- RBAC viewer ("what can this ServiceAccount do").
-- Prometheus-backed historical metrics — slots into the `MetricsProvider`
-  trait already anticipated in `metrics.rs`.
+**Done**, with two scope notes decided during implementation.
+
+- CRD-aware generic UI. **Done** — `list_resource_kinds` (from Tier 1)
+  already returns CRDs; a static `KNOWN_BUILTIN_GROUPS` set in
+  `resourceKinds.ts` separates them from built-ins (verified against the
+  real cluster's actual CRDs: cert-manager, calico, istio, nvidia,
+  node-feature-discovery). Printer columns come from the CRD's own
+  `additionalPrinterColumns`, evaluated with a small JSONPath subset
+  (`jsonPath.ts`) that had to support K8s's `[?(@.field=="value")]` filter
+  syntax, not just dot-paths — real cert-manager columns (Ready/Status) use
+  exactly that, caught by testing against the live CRD rather than assuming.
+- Helm releases. **Done, read-only** (list/values/manifest/history) — user
+  decision: no `helm` binary dependency, releases decoded directly from
+  their `helm.sh/release.v1` Secrets (`helm.rs`), verified against real
+  releases already on the cluster (cert-manager, learn2write, gpu-operator).
+  Rollback deliberately not implemented (resource pruning/hooks are easy to
+  get subtly wrong).
+- RBAC viewer. **Done** — binding-aggregation approach (`rbac.rs`), not
+  `SubjectAccessReview` (doesn't need extra permissions beyond read).
+  ServiceAccount/Role/ClusterRole/RoleBinding/ClusterRoleBinding registered
+  as normal resource kinds (free list/detail/YAML/delete); a "Permissions"
+  tab on ServiceAccount detail pages resolves bound Role/ClusterRole rules.
+- Prometheus-backed historical metrics. **Done for cluster-level Dashboard
+  metrics**; per-pod Prometheus metrics not done (flagged as a nice-to-have
+  in the plan, `usePodMetrics.ts` still metrics-server-only). Correction to
+  this doc's earlier claim: there was no `MetricsProvider` trait already in
+  `metrics.rs` - added parallel commands instead, frontend picks the source.
+  Surfaced a real bug: `kube`'s and `reqwest`'s independent rustls stacks
+  need an explicit `CryptoProvider::install_default()` at startup or every
+  TLS call (including kube's own) panics - fixed in `lib.rs`.
 
 ## Tier 4 — Debugging & operations
 
@@ -74,6 +98,6 @@ the registry that drives both list views and detail-page actions.
 
 ## Status
 
-Tiers 1 and 2 done. Tiers are taken up one at a time; this file is updated
-with **Done.** markers per item as they land, matching the convention in
-`docs/architecture-plan.md`.
+Tiers 1, 2, and 3 done. Tiers are taken up one at a time; this file is
+updated with **Done.** markers per item as they land, matching the
+convention in `docs/architecture-plan.md`.
