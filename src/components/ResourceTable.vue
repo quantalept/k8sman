@@ -47,6 +47,8 @@ const columns = computed<DataTableColumns<any>>(() => {
     {
       title: "Name",
       key: "metadata.name",
+      minWidth: 140,
+      ellipsis: { tooltip: true },
       render: (row) => row.metadata?.name ?? "",
       sorter: (a: any, b: any) => (a.metadata?.name ?? "").localeCompare(b.metadata?.name ?? ""),
     },
@@ -55,6 +57,7 @@ const columns = computed<DataTableColumns<any>>(() => {
     base.push({
       title: "Namespace",
       key: "metadata.namespace",
+      minWidth: 100,
       render: (row) => row.metadata?.namespace ?? "-",
       sorter: (a: any, b: any) =>
         (a.metadata?.namespace ?? "").localeCompare(b.metadata?.namespace ?? ""),
@@ -64,6 +67,7 @@ const columns = computed<DataTableColumns<any>>(() => {
   base.push({
     title: "Age",
     key: "age",
+    minWidth: 70,
     render: (row) => age(row),
     // Newest first by default - sorting by the rendered "3d"/"10m" string would be wrong
     // (string-sorts "10m" before "3d"), so sort by the real timestamp instead.

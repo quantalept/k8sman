@@ -58,6 +58,12 @@ const columns = computed<DataTableColumns<any>>(() =>
     .map((c) => ({
       title: c.name,
       key: c.name,
+      // Without a floor, an unbounded free-text column (e.g. cert-manager's "Reason") soaks up
+      // all available width and squeezes short headers like "State" into a vertical letter
+      // stack. minWidth keeps every header readable; ellipsis+tooltip keeps long values from
+      // then blowing the row back out (hover to see the full text).
+      minWidth: Math.max(100, c.name.length * 10 + 40),
+      ellipsis: { tooltip: true },
       render: (row: any) => {
         const value = evalPrinterColumnPath(row, c.jsonPath);
         return value === undefined || value === null ? "-" : String(value);
