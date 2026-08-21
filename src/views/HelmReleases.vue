@@ -47,18 +47,24 @@ function statusType(status: string): "success" | "warning" | "error" | "default"
 }
 
 const columns: DataTableColumns<HelmReleaseSummary> = [
-  { title: "Name", key: "name" },
-  { title: "Namespace", key: "namespace" },
-  { title: "Chart", key: "chart", render: (row) => `${row.chart}-${row.chartVersion}` },
-  { title: "App Version", key: "appVersion" },
+  { title: "Name", key: "name", sorter: (a, b) => a.name.localeCompare(b.name) },
+  { title: "Namespace", key: "namespace", sorter: (a, b) => a.namespace.localeCompare(b.namespace) },
+  {
+    title: "Chart",
+    key: "chart",
+    render: (row) => `${row.chart}-${row.chartVersion}`,
+    sorter: (a, b) => a.chart.localeCompare(b.chart),
+  },
+  { title: "App Version", key: "appVersion", sorter: (a, b) => a.appVersion.localeCompare(b.appVersion) },
   {
     title: "Status",
     key: "status",
     render: (row) =>
       h(NTag, { type: statusType(row.status), size: "small", round: true }, { default: () => row.status }),
+    sorter: (a, b) => a.status.localeCompare(b.status),
   },
-  { title: "Revision", key: "revision" },
-  { title: "Updated", key: "updated" },
+  { title: "Revision", key: "revision", sorter: (a, b) => a.revision - b.revision },
+  { title: "Updated", key: "updated", sorter: (a, b) => a.updated.localeCompare(b.updated) },
 ];
 </script>
 

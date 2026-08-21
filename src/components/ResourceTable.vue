@@ -37,19 +37,38 @@ function age(obj: any): string {
   return `${Math.floor(hours / 24)}d`;
 }
 
+function creationEpoch(obj: any): number {
+  const ts = obj?.metadata?.creationTimestamp;
+  return ts ? new Date(ts).getTime() : 0;
+}
+
 const columns = computed<DataTableColumns<any>>(() => {
   const base: DataTableColumns<any> = [
-    { title: "Name", key: "metadata.name", render: (row) => row.metadata?.name ?? "" },
+    {
+      title: "Name",
+      key: "metadata.name",
+      render: (row) => row.metadata?.name ?? "",
+      sorter: (a: any, b: any) => (a.metadata?.name ?? "").localeCompare(b.metadata?.name ?? ""),
+    },
   ];
   if (props.showNamespace !== false) {
     base.push({
       title: "Namespace",
       key: "metadata.namespace",
       render: (row) => row.metadata?.namespace ?? "-",
+      sorter: (a: any, b: any) =>
+        (a.metadata?.namespace ?? "").localeCompare(b.metadata?.namespace ?? ""),
     });
   }
   base.push(...(props.columns ?? []));
-  base.push({ title: "Age", key: "age", render: (row) => age(row) });
+  base.push({
+    title: "Age",
+    key: "age",
+    render: (row) => age(row),
+    // Newest first by default - sorting by the rendered "3d"/"10m" string would be wrong
+    // (string-sorts "10m" before "3d"), so sort by the real timestamp instead.
+    sorter: (a: any, b: any) => creationEpoch(b) - creationEpoch(a),
+  });
   return base;
 });
 

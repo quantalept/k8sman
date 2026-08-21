@@ -58,10 +58,20 @@ function viewRevision(revision: number) {
 }
 
 const historyColumns: DataTableColumns<HelmReleaseSummary> = [
-  { title: "Revision", key: "revision" },
-  { title: "Status", key: "status" },
-  { title: "Chart", key: "chart", render: (row) => `${row.chart}-${row.chartVersion}` },
-  { title: "Updated", key: "updated" },
+  {
+    title: "Revision",
+    key: "revision",
+    sorter: (a, b) => a.revision - b.revision,
+    defaultSortOrder: "descend",
+  },
+  { title: "Status", key: "status", sorter: (a, b) => a.status.localeCompare(b.status) },
+  {
+    title: "Chart",
+    key: "chart",
+    render: (row) => `${row.chart}-${row.chartVersion}`,
+    sorter: (a, b) => a.chart.localeCompare(b.chart),
+  },
+  { title: "Updated", key: "updated", sorter: (a, b) => a.updated.localeCompare(b.updated) },
   { title: "Description", key: "description" },
 ];
 </script>

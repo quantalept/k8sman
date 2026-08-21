@@ -43,6 +43,14 @@ function restarts(row: any): number {
   return statuses.reduce((sum, s) => sum + (s.restartCount ?? 0), 0);
 }
 
+function cpuCores(row: any): number {
+  return podUsage.value.get(`${row.metadata.namespace}/${row.metadata.name}`)?.cpuCores ?? -1;
+}
+
+function memoryBytes(row: any): number {
+  return podUsage.value.get(`${row.metadata.namespace}/${row.metadata.name}`)?.memoryBytes ?? -1;
+}
+
 const columns = [
   {
     title: "Status",
@@ -51,8 +59,14 @@ const columns = [
       const s = podStatus(row);
       return h(NTag, { type: s.type, size: "small", round: true }, { default: () => s.text });
     },
+    sorter: (a: any, b: any) => podStatus(a).text.localeCompare(podStatus(b).text),
   },
-  { title: "Restarts", key: "restarts", render: (row: any) => restarts(row) },
+  {
+    title: "Restarts",
+    key: "restarts",
+    render: (row: any) => restarts(row),
+    sorter: (a: any, b: any) => restarts(a) - restarts(b),
+  },
   {
     title: "CPU",
     key: "cpu",
@@ -60,6 +74,7 @@ const columns = [
       const usage = podUsage.value.get(`${row.metadata.namespace}/${row.metadata.name}`);
       return usage ? formatCores(usage.cpuCores) : "-";
     },
+    sorter: (a: any, b: any) => cpuCores(a) - cpuCores(b),
   },
   {
     title: "Memory",
@@ -68,6 +83,7 @@ const columns = [
       const usage = podUsage.value.get(`${row.metadata.namespace}/${row.metadata.name}`);
       return usage ? formatBytes(usage.memoryBytes) : "-";
     },
+    sorter: (a: any, b: any) => memoryBytes(a) - memoryBytes(b),
   },
 ];
 

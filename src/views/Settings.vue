@@ -60,8 +60,8 @@ async function forget(path: string) {
 }
 
 const contextColumns: DataTableColumns<ContextInfo> = [
-  { title: "Context", key: "name" },
-  { title: "Cluster", key: "cluster" },
+  { title: "Context", key: "name", sorter: (a, b) => a.name.localeCompare(b.name) },
+  { title: "Cluster", key: "cluster", sorter: (a, b) => a.cluster.localeCompare(b.cluster) },
   { title: "Namespace", key: "namespace", render: (row) => row.namespace ?? "default" },
   { title: "Source", key: "source" },
 ];
@@ -69,8 +69,8 @@ const contextColumns: DataTableColumns<ContextInfo> = [
 const contexts = computed(() => store.contexts);
 
 const savedViewColumns: DataTableColumns<SavedView> = [
-  { title: "Name", key: "name" },
-  { title: "Kind", key: "kind" },
+  { title: "Name", key: "name", sorter: (a, b) => a.name.localeCompare(b.name) },
+  { title: "Kind", key: "kind", sorter: (a, b) => a.kind.localeCompare(b.kind) },
   { title: "Namespace", key: "namespace", render: (row) => row.namespace ?? "all" },
   { title: "Label selector", key: "labelSelector", render: (row) => row.labelSelector ?? "-" },
   {

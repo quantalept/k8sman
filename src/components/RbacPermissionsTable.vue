@@ -57,10 +57,20 @@ onMounted(load);
 watch([() => props.namespace, () => props.name, () => cluster.currentContext], load);
 
 const columns: DataTableColumns<Row> = [
-  { title: "Via", key: "via", render: (row) => `${row.bindingKind}/${row.bindingName}` },
-  { title: "Role", key: "role", render: (row) => `${row.roleKind}/${row.roleName}` },
-  { title: "API Group", key: "apiGroups" },
-  { title: "Resources", key: "resources" },
+  {
+    title: "Via",
+    key: "via",
+    render: (row) => `${row.bindingKind}/${row.bindingName}`,
+    sorter: (a, b) => a.bindingName.localeCompare(b.bindingName),
+  },
+  {
+    title: "Role",
+    key: "role",
+    render: (row) => `${row.roleKind}/${row.roleName}`,
+    sorter: (a, b) => a.roleName.localeCompare(b.roleName),
+  },
+  { title: "API Group", key: "apiGroups", sorter: (a, b) => a.apiGroups.localeCompare(b.apiGroups) },
+  { title: "Resources", key: "resources", sorter: (a, b) => a.resources.localeCompare(b.resources) },
   { title: "Verbs", key: "verbs" },
   { title: "Resource Names", key: "resourceNames" },
 ];

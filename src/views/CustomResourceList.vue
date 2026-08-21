@@ -62,6 +62,12 @@ const columns = computed<DataTableColumns<any>>(() =>
         const value = evalPrinterColumnPath(row, c.jsonPath);
         return value === undefined || value === null ? "-" : String(value);
       },
+      sorter: (a: any, b: any) => {
+        const av = evalPrinterColumnPath(a, c.jsonPath);
+        const bv = evalPrinterColumnPath(b, c.jsonPath);
+        if (typeof av === "number" && typeof bv === "number") return av - bv;
+        return String(av ?? "").localeCompare(String(bv ?? ""));
+      },
     })),
 );
 

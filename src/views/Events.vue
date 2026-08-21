@@ -14,28 +14,37 @@ const namespaceOptions = computed(() => [
 
 const { items, loading, error } = useResourceList("Event", effectiveNamespace);
 
-const sorted = computed(() =>
-  [...items.value].sort((a, b) => {
-    const at = a.lastTimestamp ?? a.eventTime ?? a.metadata?.creationTimestamp ?? "";
-    const bt = b.lastTimestamp ?? b.eventTime ?? b.metadata?.creationTimestamp ?? "";
-    return String(bt).localeCompare(String(at));
-  }),
-);
+function lastSeen(row: any): string {
+  return row.lastTimestamp ?? row.eventTime ?? row.metadata?.creationTimestamp ?? "";
+}
 
 const columns: DataTableColumns<any> = [
-  { title: "Type", key: "type", render: (row) => row.type ?? "-" },
-  { title: "Reason", key: "reason", render: (row) => row.reason ?? "-" },
+  {
+    title: "Type",
+    key: "type",
+    render: (row) => row.type ?? "-",
+    sorter: (a: any, b: any) => (a.type ?? "").localeCompare(b.type ?? ""),
+  },
+  {
+    title: "Reason",
+    key: "reason",
+    render: (row) => row.reason ?? "-",
+    sorter: (a: any, b: any) => (a.reason ?? "").localeCompare(b.reason ?? ""),
+  },
   {
     title: "Object",
     key: "object",
-    render: (row) =>
-      `${row.involvedObject?.kind ?? "-"}/${row.involvedObject?.name ?? "-"}`,
+    render: (row) => `${row.involvedObject?.kind ?? "-"}/${row.involvedObject?.name ?? "-"}`,
+    sorter: (a: any, b: any) =>
+      (a.involvedObject?.name ?? "").localeCompare(b.involvedObject?.name ?? ""),
   },
   { title: "Message", key: "message", render: (row) => row.message ?? "-" },
   {
     title: "Last Seen",
     key: "lastSeen",
-    render: (row) => row.lastTimestamp ?? row.eventTime ?? "-",
+    render: (row) => lastSeen(row) || "-",
+    sorter: (a: any, b: any) => lastSeen(b).localeCompare(lastSeen(a)),
+    defaultSortOrder: "ascend",
   },
 ];
 </script>
@@ -50,7 +59,7 @@ const columns: DataTableColumns<any> = [
         placeholder="All namespaces"
       />
       <n-alert v-if="error" type="error" :title="error" closable />
-      <n-data-table :columns="columns" :data="sorted" :loading="loading" :bordered="false" size="small" />
+      <n-data-table :columns="columns" :data="items" :loading="loading" :bordered="false" size="small" />
     </n-space>
   </n-card>
 </template>

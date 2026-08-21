@@ -22,6 +22,7 @@ import {
   LinkOutline,
   GitCompareOutline,
 } from "@vicons/ionicons5";
+import { parseMemoryQuantity } from "./api/metrics";
 
 export interface ResourceKindConfig {
   /** The Kubernetes Kind, used to resolve the resource via discovery. */
@@ -72,6 +73,15 @@ function statusTag(text: string, type: "success" | "warning" | "error" | "defaul
   return h(NTag, { type, size: "small", round: true }, { default: () => text });
 }
 
+function isNodeReady(row: any): boolean {
+  return (row.status?.conditions ?? []).some((c: any) => c.type === "Ready" && c.status === "True");
+}
+
+/** Sorts by a numeric field read off each row - the common case for count-style columns. */
+function numericSorter(get: (row: any) => number) {
+  return (a: any, b: any) => get(a) - get(b);
+}
+
 export const resourceKinds: ResourceKindConfig[] = [
   {
     kind: "Namespace",
@@ -80,7 +90,14 @@ export const resourceKinds: ResourceKindConfig[] = [
     namespaced: false,
     icon: FolderOutline,
     group: "Cluster",
-    columns: [{ title: "Status", key: "status", render: (row: any) => row.status?.phase ?? "-" }],
+    columns: [
+      {
+        title: "Status",
+        key: "status",
+        render: (row: any) => row.status?.phase ?? "-",
+        sorter: (a: any, b: any) => (a.status?.phase ?? "").localeCompare(b.status?.phase ?? ""),
+      },
+    ],
   },
   {
     kind: "Node",
@@ -94,16 +111,19 @@ export const resourceKinds: ResourceKindConfig[] = [
         title: "Status",
         key: "status",
         render: (row: any) => {
-          const ready = (row.status?.conditions ?? []).some(
-            (c: any) => c.type === "Ready" && c.status === "True",
-          );
+          const ready = isNodeReady(row);
           return statusTag(ready ? "Ready" : "Not Ready", ready ? "success" : "error");
         },
+        sorter: (a: any, b: any) => Number(isNodeReady(a)) - Number(isNodeReady(b)),
       },
       {
         title: "Version",
         key: "version",
         render: (row: any) => row.status?.nodeInfo?.kubeletVersion ?? "-",
+        sorter: (a: any, b: any) =>
+          (a.status?.nodeInfo?.kubeletVersion ?? "").localeCompare(
+            b.status?.nodeInfo?.kubeletVersion ?? "",
+          ),
       },
     ],
   },
@@ -121,9 +141,20 @@ export const resourceKinds: ResourceKindConfig[] = [
         title: "Ready",
         key: "ready",
         render: (row: any) => `${row.status?.readyReplicas ?? 0}/${row.spec?.replicas ?? 0}`,
+        sorter: numericSorter((row) => row.status?.readyReplicas ?? 0),
       },
-      { title: "Up-to-date", key: "updated", render: (row: any) => row.status?.updatedReplicas ?? 0 },
-      { title: "Available", key: "available", render: (row: any) => row.status?.availableReplicas ?? 0 },
+      {
+        title: "Up-to-date",
+        key: "updated",
+        render: (row: any) => row.status?.updatedReplicas ?? 0,
+        sorter: numericSorter((row) => row.status?.updatedReplicas ?? 0),
+      },
+      {
+        title: "Available",
+        key: "available",
+        render: (row: any) => row.status?.availableReplicas ?? 0,
+        sorter: numericSorter((row) => row.status?.availableReplicas ?? 0),
+      },
     ],
   },
   {
@@ -135,9 +166,24 @@ export const resourceKinds: ResourceKindConfig[] = [
     group: "Workloads",
     scalable: true,
     columns: [
-      { title: "Desired", key: "desired", render: (row: any) => row.spec?.replicas ?? 0 },
-      { title: "Current", key: "current", render: (row: any) => row.status?.replicas ?? 0 },
-      { title: "Ready", key: "ready", render: (row: any) => row.status?.readyReplicas ?? 0 },
+      {
+        title: "Desired",
+        key: "desired",
+        render: (row: any) => row.spec?.replicas ?? 0,
+        sorter: numericSorter((row) => row.spec?.replicas ?? 0),
+      },
+      {
+        title: "Current",
+        key: "current",
+        render: (row: any) => row.status?.replicas ?? 0,
+        sorter: numericSorter((row) => row.status?.replicas ?? 0),
+      },
+      {
+        title: "Ready",
+        key: "ready",
+        render: (row: any) => row.status?.readyReplicas ?? 0,
+        sorter: numericSorter((row) => row.status?.readyReplicas ?? 0),
+      },
     ],
   },
   {
@@ -154,6 +200,7 @@ export const resourceKinds: ResourceKindConfig[] = [
         title: "Ready",
         key: "ready",
         render: (row: any) => `${row.status?.readyReplicas ?? 0}/${row.spec?.replicas ?? 0}`,
+        sorter: numericSorter((row) => row.status?.readyReplicas ?? 0),
       },
     ],
   },
@@ -166,9 +213,24 @@ export const resourceKinds: ResourceKindConfig[] = [
     group: "Workloads",
     restartable: true,
     columns: [
-      { title: "Desired", key: "desired", render: (row: any) => row.status?.desiredNumberScheduled ?? 0 },
-      { title: "Current", key: "current", render: (row: any) => row.status?.currentNumberScheduled ?? 0 },
-      { title: "Ready", key: "ready", render: (row: any) => row.status?.numberReady ?? 0 },
+      {
+        title: "Desired",
+        key: "desired",
+        render: (row: any) => row.status?.desiredNumberScheduled ?? 0,
+        sorter: numericSorter((row) => row.status?.desiredNumberScheduled ?? 0),
+      },
+      {
+        title: "Current",
+        key: "current",
+        render: (row: any) => row.status?.currentNumberScheduled ?? 0,
+        sorter: numericSorter((row) => row.status?.currentNumberScheduled ?? 0),
+      },
+      {
+        title: "Ready",
+        key: "ready",
+        render: (row: any) => row.status?.numberReady ?? 0,
+        sorter: numericSorter((row) => row.status?.numberReady ?? 0),
+      },
     ],
   },
   {
@@ -183,6 +245,7 @@ export const resourceKinds: ResourceKindConfig[] = [
         title: "Completions",
         key: "completions",
         render: (row: any) => `${row.status?.succeeded ?? 0}/${row.spec?.completions ?? 1}`,
+        sorter: numericSorter((row) => row.status?.succeeded ?? 0),
       },
     ],
   },
@@ -194,16 +257,24 @@ export const resourceKinds: ResourceKindConfig[] = [
     icon: TimeOutline,
     group: "Workloads",
     columns: [
-      { title: "Schedule", key: "schedule", render: (row: any) => row.spec?.schedule ?? "-" },
+      {
+        title: "Schedule",
+        key: "schedule",
+        render: (row: any) => row.spec?.schedule ?? "-",
+        sorter: (a: any, b: any) => (a.spec?.schedule ?? "").localeCompare(b.spec?.schedule ?? ""),
+      },
       {
         title: "Suspended",
         key: "suspend",
         render: (row: any) => (row.spec?.suspend ? "Yes" : "No"),
+        sorter: numericSorter((row) => (row.spec?.suspend ? 1 : 0)),
       },
       {
         title: "Last Schedule",
         key: "lastSchedule",
         render: (row: any) => row.status?.lastScheduleTime ?? "never",
+        sorter: (a: any, b: any) =>
+          (a.status?.lastScheduleTime ?? "").localeCompare(b.status?.lastScheduleTime ?? ""),
       },
     ],
   },
@@ -215,7 +286,12 @@ export const resourceKinds: ResourceKindConfig[] = [
     icon: GitNetworkOutline,
     group: "Network",
     columns: [
-      { title: "Type", key: "type", render: (row: any) => row.spec?.type ?? "ClusterIP" },
+      {
+        title: "Type",
+        key: "type",
+        render: (row: any) => row.spec?.type ?? "ClusterIP",
+        sorter: (a: any, b: any) => (a.spec?.type ?? "").localeCompare(b.spec?.type ?? ""),
+      },
       { title: "Cluster IP", key: "clusterIP", render: (row: any) => row.spec?.clusterIP ?? "-" },
       {
         title: "Ports",
@@ -252,7 +328,12 @@ export const resourceKinds: ResourceKindConfig[] = [
     icon: DocumentTextOutline,
     group: "Config",
     columns: [
-      { title: "Keys", key: "keys", render: (row: any) => Object.keys(row.data ?? {}).length },
+      {
+        title: "Keys",
+        key: "keys",
+        render: (row: any) => Object.keys(row.data ?? {}).length,
+        sorter: numericSorter((row) => Object.keys(row.data ?? {}).length),
+      },
     ],
   },
   {
@@ -263,8 +344,18 @@ export const resourceKinds: ResourceKindConfig[] = [
     icon: LockClosedOutline,
     group: "Config",
     columns: [
-      { title: "Type", key: "type", render: (row: any) => row.type ?? "Opaque" },
-      { title: "Keys", key: "keys", render: (row: any) => Object.keys(row.data ?? {}).length },
+      {
+        title: "Type",
+        key: "type",
+        render: (row: any) => row.type ?? "Opaque",
+        sorter: (a: any, b: any) => (a.type ?? "").localeCompare(b.type ?? ""),
+      },
+      {
+        title: "Keys",
+        key: "keys",
+        render: (row: any) => Object.keys(row.data ?? {}).length,
+        sorter: numericSorter((row) => Object.keys(row.data ?? {}).length),
+      },
     ],
   },
   {
@@ -285,7 +376,12 @@ export const resourceKinds: ResourceKindConfig[] = [
         key: "minmax",
         render: (row: any) => `${row.spec?.minReplicas ?? "-"}/${row.spec?.maxReplicas ?? "-"}`,
       },
-      { title: "Replicas", key: "replicas", render: (row: any) => row.status?.currentReplicas ?? 0 },
+      {
+        title: "Replicas",
+        key: "replicas",
+        render: (row: any) => row.status?.currentReplicas ?? 0,
+        sorter: numericSorter((row) => row.status?.currentReplicas ?? 0),
+      },
     ],
   },
   {
@@ -296,8 +392,18 @@ export const resourceKinds: ResourceKindConfig[] = [
     icon: SaveOutline,
     group: "Storage",
     columns: [
-      { title: "Capacity", key: "capacity", render: (row: any) => row.spec?.capacity?.storage ?? "-" },
-      { title: "Status", key: "status", render: (row: any) => row.status?.phase ?? "-" },
+      {
+        title: "Capacity",
+        key: "capacity",
+        render: (row: any) => row.spec?.capacity?.storage ?? "-",
+        sorter: numericSorter((row) => parseMemoryQuantity(row.spec?.capacity?.storage)),
+      },
+      {
+        title: "Status",
+        key: "status",
+        render: (row: any) => row.status?.phase ?? "-",
+        sorter: (a: any, b: any) => (a.status?.phase ?? "").localeCompare(b.status?.phase ?? ""),
+      },
       { title: "Claim", key: "claim", render: (row: any) => row.spec?.claimRef?.name ?? "-" },
     ],
   },
@@ -309,12 +415,18 @@ export const resourceKinds: ResourceKindConfig[] = [
     icon: BookmarkOutline,
     group: "Storage",
     columns: [
-      { title: "Status", key: "status", render: (row: any) => row.status?.phase ?? "-" },
+      {
+        title: "Status",
+        key: "status",
+        render: (row: any) => row.status?.phase ?? "-",
+        sorter: (a: any, b: any) => (a.status?.phase ?? "").localeCompare(b.status?.phase ?? ""),
+      },
       { title: "Volume", key: "volume", render: (row: any) => row.spec?.volumeName ?? "-" },
       {
         title: "Capacity",
         key: "capacity",
         render: (row: any) => row.status?.capacity?.storage ?? "-",
+        sorter: numericSorter((row) => parseMemoryQuantity(row.status?.capacity?.storage)),
       },
     ],
   },
@@ -334,7 +446,12 @@ export const resourceKinds: ResourceKindConfig[] = [
     icon: KeyOutline,
     group: "Access Control",
     columns: [
-      { title: "Rules", key: "rules", render: (row: any) => (row.rules ?? []).length },
+      {
+        title: "Rules",
+        key: "rules",
+        render: (row: any) => (row.rules ?? []).length,
+        sorter: numericSorter((row) => (row.rules ?? []).length),
+      },
     ],
   },
   {
@@ -345,7 +462,12 @@ export const resourceKinds: ResourceKindConfig[] = [
     icon: ShieldCheckmarkOutline,
     group: "Access Control",
     columns: [
-      { title: "Rules", key: "rules", render: (row: any) => (row.rules ?? []).length },
+      {
+        title: "Rules",
+        key: "rules",
+        render: (row: any) => (row.rules ?? []).length,
+        sorter: numericSorter((row) => (row.rules ?? []).length),
+      },
     ],
   },
   {
@@ -360,6 +482,7 @@ export const resourceKinds: ResourceKindConfig[] = [
         title: "Role",
         key: "role",
         render: (row: any) => `${row.roleRef?.kind ?? "-"}/${row.roleRef?.name ?? "-"}`,
+        sorter: (a: any, b: any) => (a.roleRef?.name ?? "").localeCompare(b.roleRef?.name ?? ""),
       },
     ],
   },
@@ -375,6 +498,7 @@ export const resourceKinds: ResourceKindConfig[] = [
         title: "Role",
         key: "role",
         render: (row: any) => `${row.roleRef?.kind ?? "-"}/${row.roleRef?.name ?? "-"}`,
+        sorter: (a: any, b: any) => (a.roleRef?.name ?? "").localeCompare(b.roleRef?.name ?? ""),
       },
     ],
   },
