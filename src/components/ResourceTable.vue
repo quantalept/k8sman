@@ -2,6 +2,7 @@
 import { computed, toRef } from "vue";
 import { NDataTable, NAlert, NText, type DataTableColumns } from "naive-ui";
 import { useResourceList } from "../composables/useResourceList";
+import { PAGE_TABLE_MAX_HEIGHT } from "../layout";
 
 const props = defineProps<{
   kind: string;
@@ -13,6 +14,8 @@ const props = defineProps<{
   columns?: DataTableColumns<any>;
   showNamespace?: boolean;
   rowProps?: (row: any) => Record<string, unknown>;
+  /** Override when this table sits somewhere with more/less chrome above it (e.g. a tab). */
+  maxHeight?: string | number;
 }>();
 
 const namespaceRef = toRef(props, "namespace");
@@ -88,6 +91,7 @@ const rowKey = (row: any) => row.metadata?.uid ?? `${row.metadata?.namespace}/${
       :loading="loading"
       :row-key="rowKey"
       :row-props="rowProps"
+      :max-height="maxHeight ?? PAGE_TABLE_MAX_HEIGHT"
       :bordered="false"
       size="small"
     />

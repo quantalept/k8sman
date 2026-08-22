@@ -5,6 +5,7 @@ import { NCard, NSelect, NSpace, NDataTable, NAlert, NTag, type DataTableColumns
 import { listHelmReleases, type HelmReleaseSummary } from "../api/helm";
 import { useResourceList } from "../composables/useResourceList";
 import { useClusterStore } from "../stores/cluster";
+import { PAGE_TABLE_MAX_HEIGHT } from "../layout";
 
 const router = useRouter();
 const cluster = useClusterStore();
@@ -82,6 +83,7 @@ const columns: DataTableColumns<HelmReleaseSummary> = [
         :columns="columns"
         :data="releases"
         :loading="loading"
+        :max-height="PAGE_TABLE_MAX_HEIGHT"
         :bordered="false"
         size="small"
         :row-props="

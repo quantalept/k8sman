@@ -3,6 +3,7 @@ import { onMounted, onBeforeUnmount, ref, watch } from "vue";
 import { Terminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
+import { NSpin } from "naive-ui";
 import { startLogStream } from "../api/logs";
 import { useClusterStore } from "../stores/cluster";
 
@@ -16,6 +17,8 @@ const props = defineProps<{
 
 const cluster = useClusterStore();
 const containerEl = ref<HTMLDivElement | null>(null);
+const loading = ref(false);
+const error = ref<string | null>(null);
 
 let term: Terminal | null = null;
 let fitAddon: FitAddon | null = null;
@@ -26,22 +29,30 @@ async function subscribe() {
   stopStream?.();
   stopStream = null;
   term?.clear();
+  error.value = null;
 
   const contextName = cluster.currentContext;
   if (!contextName || !term) return;
 
-  stopStream = await startLogStream(
-    {
-      contextName,
-      namespace: props.namespace,
-      pod: props.pod,
-      container: props.container,
-      follow: props.follow ?? true,
-      tailLines: props.tailLines ?? 200,
-    },
-    (line) => term?.writeln(line),
-    () => term?.writeln("\x1b[2m[stream ended]\x1b[0m"),
-  );
+  loading.value = true;
+  try {
+    stopStream = await startLogStream(
+      {
+        contextName,
+        namespace: props.namespace,
+        pod: props.pod,
+        container: props.container,
+        follow: props.follow ?? true,
+        tailLines: props.tailLines ?? 200,
+      },
+      (line) => term?.writeln(line),
+      () => term?.writeln("\x1b[2m[stream ended]\x1b[0m"),
+    );
+    loading.value = false;
+  } catch (e) {
+    loading.value = false;
+    error.value = String(e);
+  }
 }
 
 onMounted(() => {
@@ -73,14 +84,24 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="containerEl" class="log-viewer" />
+  <n-spin :show="loading" description="Loading logs…" class="log-viewer-wrap">
+    <div v-if="error" class="log-viewer-error">{{ error }}</div>
+    <div ref="containerEl" class="log-viewer" />
+  </n-spin>
 </template>
 
 <style scoped>
+.log-viewer-wrap {
+  display: block;
+}
 .log-viewer {
   height: 400px;
   padding: 8px;
   background: #101014;
   border-radius: 6px;
+}
+.log-viewer-error {
+  color: #e88080;
+  padding: 8px 0;
 }
 </style>

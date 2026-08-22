@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { NDataTable, NAlert, type DataTableColumns } from "naive-ui";
 import { useResourceList } from "../composables/useResourceList";
+import { TAB_TABLE_MAX_HEIGHT } from "../layout";
 
 const props = defineProps<{
   namespace?: string;
@@ -47,5 +48,12 @@ const columns: DataTableColumns<any> = [
 
 <template>
   <n-alert v-if="error" type="error" :title="error" closable style="margin-bottom: 12px" />
-  <n-data-table :columns="columns" :data="items" :loading="loading" :bordered="false" size="small" />
+  <n-data-table
+    :columns="columns"
+    :data="items"
+    :loading="loading"
+    :max-height="TAB_TABLE_MAX_HEIGHT"
+    :bordered="false"
+    size="small"
+  />
 </template>

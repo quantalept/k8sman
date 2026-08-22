@@ -6,6 +6,7 @@ import { NCard, NSpace, NTabs, NTabPane, NText, NDataTable, NAlert, NTag, type D
 import YamlViewer from "../components/YamlViewer.vue";
 import { getHelmRelease, listHelmReleaseHistory, type HelmReleaseSummary } from "../api/helm";
 import { useClusterStore } from "../stores/cluster";
+import { TAB_TABLE_MAX_HEIGHT } from "../layout";
 
 const route = useRoute();
 const cluster = useClusterStore();
@@ -105,6 +106,7 @@ const historyColumns: DataTableColumns<HelmReleaseSummary> = [
             :columns="historyColumns"
             :data="history"
             :loading="loading"
+            :max-height="TAB_TABLE_MAX_HEIGHT"
             :bordered="false"
             size="small"
             :row-props="

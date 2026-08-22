@@ -2,6 +2,7 @@
 import { ref, computed } from "vue";
 import { NCard, NSpace, NSelect, NDataTable, NAlert, type DataTableColumns } from "naive-ui";
 import { useResourceList } from "../composables/useResourceList";
+import { PAGE_TABLE_MAX_HEIGHT } from "../layout";
 
 const namespace = ref<string>("");
 const effectiveNamespace = computed(() => namespace.value || undefined);
@@ -59,7 +60,14 @@ const columns: DataTableColumns<any> = [
         placeholder="All namespaces"
       />
       <n-alert v-if="error" type="error" :title="error" closable />
-      <n-data-table :columns="columns" :data="items" :loading="loading" :bordered="false" size="small" />
+      <n-data-table
+        :columns="columns"
+        :data="items"
+        :loading="loading"
+        :max-height="PAGE_TABLE_MAX_HEIGHT"
+        :bordered="false"
+        size="small"
+      />
     </n-space>
   </n-card>
 </template>

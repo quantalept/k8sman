@@ -3,6 +3,7 @@ import { ref, onMounted, watch } from "vue";
 import { NDataTable, NAlert, NText, type DataTableColumns } from "naive-ui";
 import { getSubjectRules, type BindingRules } from "../api/rbac";
 import { useClusterStore } from "../stores/cluster";
+import { TAB_TABLE_MAX_HEIGHT } from "../layout";
 
 const props = defineProps<{
   namespace?: string;
@@ -78,7 +79,14 @@ const columns: DataTableColumns<Row> = [
 
 <template>
   <n-alert v-if="error" type="error" :title="error" closable style="margin-bottom: 12px" />
-  <n-data-table :columns="columns" :data="rows" :loading="loading" :bordered="false" size="small" />
+  <n-data-table
+    :columns="columns"
+    :data="rows"
+    :loading="loading"
+    :max-height="TAB_TABLE_MAX_HEIGHT"
+    :bordered="false"
+    size="small"
+  />
   <n-text v-if="!loading && rows.length === 0 && !error" depth="3">
     No RoleBindings or ClusterRoleBindings reference this ServiceAccount.
   </n-text>
