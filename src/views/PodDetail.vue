@@ -4,6 +4,7 @@ import { useRoute } from "vue-router";
 import { NCard, NSelect, NSpace, NText, NSwitch, NTabs, NTabPane } from "naive-ui";
 import LogViewer from "../components/LogViewer.vue";
 import ExecTerminal from "../components/ExecTerminal.vue";
+import EphemeralDebugPanel from "../components/EphemeralDebugPanel.vue";
 import PortForwardManager from "../components/PortForwardManager.vue";
 import FileCopyManager from "../components/FileCopyManager.vue";
 import PodMetricsPanel from "../components/PodMetricsPanel.vue";
@@ -95,6 +96,14 @@ const containerOptions = computed(() =>
             :namespace="namespace"
             :pod="podName"
             :container="selectedContainer"
+          />
+        </n-tab-pane>
+        <n-tab-pane name="debug" tab="Debug">
+          <EphemeralDebugPanel
+            v-if="activeTab === 'debug'"
+            :namespace="namespace"
+            :pod="podName"
+            :container-options="containerOptions"
           />
         </n-tab-pane>
         <n-tab-pane name="portforward" tab="Port Forward">

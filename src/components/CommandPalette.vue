@@ -77,6 +77,7 @@ const savedViewItems = computed<PaletteItem[]>(() => {
 function resourcePath(kind: string, obj: any): string {
   const namespace = obj.metadata?.namespace;
   if (kind === "Pod") return `/pods/${namespace}/${obj.metadata?.name}`;
+  if (kind === "Node") return `/nodes/${obj.metadata?.name}`;
   const query = namespace ? `?ns=${encodeURIComponent(namespace)}` : "";
   return `/resources/${kind}/${obj.metadata?.name}${query}`;
 }

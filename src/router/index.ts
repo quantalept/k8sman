@@ -6,6 +6,7 @@ const routes = [
   { path: "/events", name: "events", component: () => import("../views/Events.vue") },
   { path: "/pods", name: "pods", component: () => import("../views/Pods.vue") },
   { path: "/pods/:namespace/:name", name: "pod-detail", component: () => import("../views/PodDetail.vue") },
+  { path: "/nodes/:name", name: "node-detail", component: () => import("../views/NodeDetail.vue") },
   {
     path: "/:kindRoute",
     name: "resource-kind-list",

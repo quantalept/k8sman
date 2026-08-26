@@ -14,6 +14,7 @@ onMounted(() => pinned.load());
 
 function resourcePath(r: PinnedResource): string {
   if (r.kind === "Pod") return `/pods/${r.namespace}/${r.name}`;
+  if (r.kind === "Node") return `/nodes/${r.name}`;
   const query = r.namespace ? `?ns=${encodeURIComponent(r.namespace)}` : "";
   return `/resources/${r.kind}/${r.name}${query}`;
 }

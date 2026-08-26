@@ -1,11 +1,13 @@
 mod cluster;
 mod cp;
 mod crds;
+mod debug;
 mod error;
 mod exec;
 mod helm;
 mod logs;
 mod metrics;
+mod nodes;
 mod portforward;
 mod rbac;
 mod resources;
@@ -43,6 +45,12 @@ pub fn run() {
             resources::restart_rollout,
             resources::start_watch,
             resources::stop_watch,
+            nodes::cordon_node,
+            nodes::taint_node,
+            nodes::untaint_node,
+            nodes::start_node_drain,
+            debug::create_node_debug_pod,
+            debug::add_ephemeral_container,
             logs::start_log_stream,
             logs::stop_log_stream,
             exec::start_exec,

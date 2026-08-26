@@ -7,6 +7,7 @@ import { PAGE_TABLE_MAX_HEIGHT } from "../layout";
 const props = defineProps<{
   kind: string;
   namespace?: string;
+  fieldSelector?: string;
   labelSelector?: string;
   /** Client-side substring filter on the resource name. */
   search?: string;
@@ -20,8 +21,14 @@ const props = defineProps<{
 
 const namespaceRef = toRef(props, "namespace");
 const kindRef = toRef(props, "kind");
+const fieldSelectorRef = toRef(props, "fieldSelector");
 const labelSelectorRef = toRef(props, "labelSelector");
-const { items, loading, error } = useResourceList(kindRef, namespaceRef, undefined, labelSelectorRef);
+const { items, loading, error } = useResourceList(
+  kindRef,
+  namespaceRef,
+  fieldSelectorRef,
+  labelSelectorRef,
+);
 
 const filteredItems = computed(() => {
   const term = props.search?.trim().toLowerCase();

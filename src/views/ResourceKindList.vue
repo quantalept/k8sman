@@ -54,6 +54,10 @@ function onRowProps(row: any) {
   return {
     style: "cursor: pointer",
     onClick: () => {
+      if (config.value?.kind === "Node") {
+        router.push(`/nodes/${row.metadata.name}`);
+        return;
+      }
       const query = row.metadata?.namespace ? { ns: row.metadata.namespace } : {};
       router.push({ path: `/resources/${config.value?.kind}/${row.metadata.name}`, query });
     },

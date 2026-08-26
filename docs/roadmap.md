@@ -85,7 +85,23 @@ the registry that drives both list views and detail-page actions.
 
 ## Tier 4 — Debugging & operations
 
-- Node shell / ephemeral debug containers, cordon/drain/taint.
+- Node shell / ephemeral debug containers, cordon/drain/taint. **Done** — a dedicated
+  `NodeDetail.vue` (Node now gets its own detail page, like Pod, instead of the generic
+  `ResourceDetail.vue`) adds cordon/uncordon (`spec.unschedulable` patch), a taint editor
+  (`nodes.rs`, read-modify-write on `spec.taints` since JSON merge-patch replaces arrays
+  wholesale), and a node-shell button that creates a privileged `hostPID`/`hostNetwork`
+  pod pinned to the node via `spec.nodeName` (bypasses the scheduler, so it works even
+  cordoned) with `/` mounted at `/host`, reusing the existing `ExecTerminal`/`start_exec`
+  plumbing unchanged. Drain (`start_node_drain`) is a single-pass eviction over
+  `Api<Pod>::evict` (kube's eviction subresource) that skips DaemonSet-owned and
+  static/mirror pods and streams per-pod progress the same way `start_watch` streams
+  resource events — no PDB-aware retry loop like `kubectl drain`, so a pod blocked by a
+  PodDisruptionBudget surfaces as an error rather than being retried. Also added an
+  ephemeral-debug-container tab on `PodDetail.vue` (kube's `ephemeralcontainers`
+  subresource, read-append-replace since it doesn't merge lists) using the same
+  attach/exec path — no `exec.rs` changes needed since it already takes an arbitrary
+  container name. No dependency bump: kube 0.99/k8s-openapi 0.24 already cover all of
+  this.
 - Crash-loop/restart alerts, desktop notifications.
 - Resource topology graph.
 
