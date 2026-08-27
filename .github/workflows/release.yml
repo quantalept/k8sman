@@ -96,10 +96,57 @@ jobs:
         with:
           args: ${{ matrix.args }}
 
-      - name: Upload build artifacts
+      # One artifact per installer *format*, not one zip per OS - each of these globs
+      # only matches the platform(s) that actually produce it, so `if-no-files-found:
+      # ignore` lets the other platforms skip it silently rather than gating each step
+      # on matrix.platform. Globs target the specific bundle subfolder + extension
+      # (never a bare `bundle/**`) so the AppImage's unpacked staging directory
+      # (`*.AppDir`, ~270MB of bundled webkit2gtk/GTK before it's squashed into the
+      # final .AppImage) never gets swept in again.
+      - name: Upload .deb artifact
         if: github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: k8sman-${{ matrix.platform }}
-          path: src-tauri/target/**/bundle/**
-          if-no-files-found: warn
+          name: k8sman-${{ matrix.platform }}-deb
+          path: src-tauri/target/**/bundle/deb/*.deb
+          if-no-files-found: ignore
+
+      - name: Upload .rpm artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: k8sman-${{ matrix.platform }}-rpm
+          path: src-tauri/target/**/bundle/rpm/*.rpm
+          if-no-files-found: ignore
+
+      - name: Upload AppImage artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: k8sman-${{ matrix.platform }}-appimage
+          path: src-tauri/target/**/bundle/appimage/*.AppImage
+          if-no-files-found: ignore
+
+      - name: Upload .dmg artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: k8sman-${{ matrix.platform }}-dmg
+          path: src-tauri/target/**/bundle/dmg/*.dmg
+          if-no-files-found: ignore
+
+      - name: Upload .msi artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: k8sman-${{ matrix.platform }}-msi
+          path: src-tauri/target/**/bundle/msi/*.msi
+          if-no-files-found: ignore
+
+      - name: Upload NSIS installer artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: k8sman-${{ matrix.platform }}-setup
+          path: src-tauri/target/**/bundle/nsis/*.exe
+          if-no-files-found: ignore
