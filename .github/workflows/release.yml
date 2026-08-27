@@ -1,0 +1,105 @@
+name: release
+
+# Two ways to run this:
+#  - push a tag like "v0.2.0" -> builds every platform and attaches installers to a
+#    draft GitHub Release (bump the version in package.json, src-tauri/Cargo.toml, and
+#    src-tauri/tauri.conf.json together before tagging, or the release name/tag and the
+#    app's own reported version will disagree).
+#  - run it manually from the Actions tab (workflow_dispatch) -> builds every platform
+#    but only uploads the installers as run artifacts, no Release is touched.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Universal binary: one .dmg/.app that runs natively on both Intel and Apple
+          # Silicon, at the cost of compiling twice on this one runner.
+          - platform: macos-latest
+            args: '--target universal-apple-darwin'
+            rust-targets: aarch64-apple-darwin,x86_64-apple-darwin
+          # 22.04, not -latest: an AppImage built against an older glibc runs on more
+          # end-user systems than one built on a newer distro. targets:"all" in
+          # tauri.conf.json means this one job also produces .deb and .rpm.
+          - platform: ubuntu-22.04
+            args: ''
+            rust-targets: ''
+          - platform: windows-latest
+            args: ''
+            rust-targets: ''
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils rpm
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-targets }}
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          # No packageManager field in package.json to auto-detect from; pin to match
+          # what's used locally (pnpm-lock.yaml is a v9 lockfile).
+          version: 9
+
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Tag push: build and attach installers to a draft GitHub Release.
+      - name: Build and publish release
+        if: github.event_name == 'push'
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: 'k8sman v__VERSION__'
+          releaseBody: 'See the assets below to download and install this version.'
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+
+      # Manual dispatch: build only, no Release created or touched.
+      - name: Build only
+        if: github.event_name == 'workflow_dispatch'
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: ${{ matrix.args }}
+
+      - name: Upload build artifacts
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: k8sman-${{ matrix.platform }}
+          path: src-tauri/target/**/bundle/**
+          if-no-files-found: warn
