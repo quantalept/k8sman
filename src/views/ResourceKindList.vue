@@ -7,6 +7,7 @@ import SavedViewControls from "../components/SavedViewControls.vue";
 import { useResourceList } from "../composables/useResourceList";
 import { findResourceKind } from "../resourceKinds";
 import { looksLikeLabelSelector } from "../labelSelector";
+import { resourcePath } from "../resourcePath";
 
 const route = useRoute();
 const router = useRouter();
@@ -54,12 +55,7 @@ function onRowProps(row: any) {
   return {
     style: "cursor: pointer",
     onClick: () => {
-      if (config.value?.kind === "Node") {
-        router.push(`/nodes/${row.metadata.name}`);
-        return;
-      }
-      const query = row.metadata?.namespace ? { ns: row.metadata.namespace } : {};
-      router.push({ path: `/resources/${config.value?.kind}/${row.metadata.name}`, query });
+      router.push(resourcePath(config.value?.kind ?? "", row.metadata?.namespace, row.metadata.name));
     },
   };
 }

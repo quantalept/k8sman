@@ -7,6 +7,7 @@ import { useClusterStore } from "../stores/cluster";
 import { useSavedViewsStore } from "../stores/savedViews";
 import { resourceKinds } from "../resourceKinds";
 import { listResources } from "../api/resources";
+import { resourcePath } from "../resourcePath";
 
 interface PaletteItem {
   id: string;
@@ -74,12 +75,8 @@ const savedViewItems = computed<PaletteItem[]>(() => {
     }));
 });
 
-function resourcePath(kind: string, obj: any): string {
-  const namespace = obj.metadata?.namespace;
-  if (kind === "Pod") return `/pods/${namespace}/${obj.metadata?.name}`;
-  if (kind === "Node") return `/nodes/${obj.metadata?.name}`;
-  const query = namespace ? `?ns=${encodeURIComponent(namespace)}` : "";
-  return `/resources/${kind}/${obj.metadata?.name}${query}`;
+function resourceObjPath(kind: string, obj: any): string {
+  return resourcePath(kind, obj.metadata?.namespace, obj.metadata?.name);
 }
 
 let searchGeneration = 0;
@@ -118,7 +115,7 @@ async function runResourceSearch(term: string) {
                 label: obj.metadata?.name,
                 sublabel: `${kind}${obj.metadata?.namespace ? ` in ${obj.metadata.namespace}` : ""}`,
                 section: "Resources",
-                action: () => goTo(resourcePath(kind, obj)),
+                action: () => goTo(resourceObjPath(kind, obj)),
               }),
             );
         } catch {

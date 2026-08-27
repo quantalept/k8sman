@@ -5,6 +5,7 @@ import { NCard, NSpace, NTabs, NTabPane, NText, NDescriptions, NDescriptionsItem
 import ResourceYamlEditor from "../components/ResourceYamlEditor.vue";
 import ResourceEventsTable from "../components/ResourceEventsTable.vue";
 import ResourceTable from "../components/ResourceTable.vue";
+import ResourceTopologyGraph from "../components/ResourceTopologyGraph.vue";
 import DeleteResourceButton from "../components/DeleteResourceButton.vue";
 import PinButton from "../components/PinButton.vue";
 import CordonButton from "../components/CordonButton.vue";
@@ -106,6 +107,9 @@ const allocatable = computed(() => node.value?.status?.allocatable ?? {});
         </n-tab-pane>
         <n-tab-pane name="events" tab="Events">
           <ResourceEventsTable :involved-object-name="name" />
+        </n-tab-pane>
+        <n-tab-pane name="topology" tab="Topology">
+          <ResourceTopologyGraph kind="Node" :name="name" />
         </n-tab-pane>
       </n-tabs>
     </n-space>

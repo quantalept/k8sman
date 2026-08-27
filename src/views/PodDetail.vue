@@ -5,6 +5,7 @@ import { NCard, NSelect, NSpace, NText, NSwitch, NTabs, NTabPane } from "naive-u
 import LogViewer from "../components/LogViewer.vue";
 import ExecTerminal from "../components/ExecTerminal.vue";
 import EphemeralDebugPanel from "../components/EphemeralDebugPanel.vue";
+import ResourceTopologyGraph from "../components/ResourceTopologyGraph.vue";
 import PortForwardManager from "../components/PortForwardManager.vue";
 import FileCopyManager from "../components/FileCopyManager.vue";
 import PodMetricsPanel from "../components/PodMetricsPanel.vue";
@@ -117,6 +118,9 @@ const containerOptions = computed(() =>
         </n-tab-pane>
         <n-tab-pane name="events" tab="Events">
           <ResourceEventsTable :namespace="namespace" :involved-object-name="podName" />
+        </n-tab-pane>
+        <n-tab-pane name="topology" tab="Topology">
+          <ResourceTopologyGraph v-if="activeTab === 'topology'" kind="Pod" :namespace="namespace" :name="podName" />
         </n-tab-pane>
       </n-tabs>
       <n-text v-else depth="3">No containers found for this pod.</n-text>

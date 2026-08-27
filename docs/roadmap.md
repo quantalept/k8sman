@@ -123,7 +123,24 @@ the registry that drives both list views and detail-page actions.
   container name. No dependency bump: kube 0.99/k8s-openapi 0.24 already cover all of
   this.
 - Crash-loop/restart alerts, desktop notifications.
-- Resource topology graph.
+- Resource topology graph. **Done** — a "Topology" tab on every resource detail page
+  (`ResourceTopologyGraph.vue`, wired into `ResourceDetail.vue`/`PodDetail.vue`/
+  `NodeDetail.vue`) shows the focal resource's *direct* relationships only — one hop in
+  each direction — rather than a whole-namespace/cluster graph; clicking a related node
+  re-centers the graph on it (`useResourceTopology.ts`'s `recenter`), so a user walks
+  Deployment → ReplicaSet → Pod → Node hop by hop without ever fetching more than a small
+  neighborhood. Relationships are derived from `metadata.ownerReferences` plus
+  spec-embedded refs (`src/topology/relationships.ts`: Ingress→Service,
+  HPA→scaleTargetRef, Pod→ConfigMap/Secret/PVC/Node/ServiceAccount, PVC↔PV) and, for
+  owner-based children, a `listResources` call on the child kind filtered client-side by
+  owner uid (same approach `DrainNodeButton.vue` already used for DaemonSet pods).
+  Service→Pod and Node→Pod children use real server-side selectors (label selector /
+  `spec.nodeName` field selector) instead of a client scan. New dependencies:
+  `@vue-flow/core`/`@vue-flow/background`/`@vue-flow/controls` (Vue-native node-link
+  diagram, chosen over a framework-agnostic lib like cytoscape) + `dagre` for layered
+  auto-layout — no backend changes were needed, this is 100% frontend. Scope note:
+  reverse lookups with no server-side filter (e.g. "which pods reference this ConfigMap")
+  are deliberately not implemented, to avoid an unbounded full-namespace pod scan.
 
 ## Tier 5 — Polish & shipping
 
@@ -134,6 +151,8 @@ the registry that drives both list views and detail-page actions.
 
 ## Status
 
-Tiers 1, 2, and 3 done. Tiers are taken up one at a time; this file is
-updated with **Done.** markers per item as they land, matching the
-convention in `docs/architecture-plan.md`.
+Tiers 1, 2, and 3 done. Tier 4: node shell/debug containers/cordon/drain/taint and the
+resource topology graph are done; crash-loop/restart alerts and desktop notifications are
+the one remaining Tier 4 item. Tiers are taken up one at a time; this file is updated
+with **Done.** markers per item as they land, matching the convention in
+`docs/architecture-plan.md`.

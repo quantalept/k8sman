@@ -5,6 +5,7 @@ import MetricCard from "../components/MetricCard.vue";
 import { useClusterMetrics } from "../composables/useClusterMetrics";
 import { useClusterStore } from "../stores/cluster";
 import { usePinnedStore, type PinnedResource } from "../stores/pinned";
+import { resourcePath } from "../resourcePath";
 
 const cluster = useClusterStore();
 const pinned = usePinnedStore();
@@ -12,11 +13,8 @@ const { samples, error, supported } = useClusterMetrics();
 
 onMounted(() => pinned.load());
 
-function resourcePath(r: PinnedResource): string {
-  if (r.kind === "Pod") return `/pods/${r.namespace}/${r.name}`;
-  if (r.kind === "Node") return `/nodes/${r.name}`;
-  const query = r.namespace ? `?ns=${encodeURIComponent(r.namespace)}` : "";
-  return `/resources/${r.kind}/${r.name}${query}`;
+function pinnedResourcePath(r: PinnedResource): string {
+  return resourcePath(r.kind, r.namespace, r.name);
 }
 
 const timestamps = computed(() => samples.value.map((s) => Math.floor(s.timestamp / 1000)));
@@ -59,7 +57,7 @@ const memoryLabel = computed(() =>
     <n-space v-else vertical :size="6">
       <n-space v-for="r in pinned.pinned" :key="`pinned-${r.kind}-${r.namespace}-${r.name}`" align="center">
         <n-tag type="warning" size="small" round>pinned</n-tag>
-        <router-link :to="resourcePath(r)">{{ r.kind }}/{{ r.name }}</router-link>
+        <router-link :to="pinnedResourcePath(r)">{{ r.kind }}/{{ r.name }}</router-link>
         <n-text v-if="r.namespace" depth="3">({{ r.namespace }})</n-text>
       </n-space>
       <n-space
@@ -68,7 +66,7 @@ const memoryLabel = computed(() =>
         align="center"
       >
         <n-tag size="small" round>recent</n-tag>
-        <router-link :to="resourcePath(r)">{{ r.kind }}/{{ r.name }}</router-link>
+        <router-link :to="pinnedResourcePath(r)">{{ r.kind }}/{{ r.name }}</router-link>
         <n-text v-if="r.namespace" depth="3">({{ r.namespace }})</n-text>
       </n-space>
     </n-space>

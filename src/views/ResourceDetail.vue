@@ -4,6 +4,7 @@ import { useRoute } from "vue-router";
 import { NCard, NSpace, NTabs, NTabPane, NText } from "naive-ui";
 import ResourceYamlEditor from "../components/ResourceYamlEditor.vue";
 import ResourceEventsTable from "../components/ResourceEventsTable.vue";
+import ResourceTopologyGraph from "../components/ResourceTopologyGraph.vue";
 import DeleteResourceButton from "../components/DeleteResourceButton.vue";
 import ScaleControl from "../components/ScaleControl.vue";
 import RestartButton from "../components/RestartButton.vue";
@@ -75,6 +76,9 @@ watch([kind, name, namespace], () =>
         </n-tab-pane>
         <n-tab-pane name="events" tab="Events">
           <ResourceEventsTable :namespace="namespace" :involved-object-name="name" />
+        </n-tab-pane>
+        <n-tab-pane name="topology" tab="Topology">
+          <ResourceTopologyGraph :kind="kind" :namespace="namespace" :name="name" />
         </n-tab-pane>
         <n-tab-pane v-if="kind === 'ServiceAccount'" name="permissions" tab="Permissions">
           <RbacPermissionsTable :namespace="namespace" :name="name" />
