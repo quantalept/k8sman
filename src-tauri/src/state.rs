@@ -1,21 +1,21 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use kube::discovery::Discovery;
 use kube::Client;
 use tokio::sync::Mutex as AsyncMutex;
 use tokio::task::AbortHandle;
 use uuid::Uuid;
 
 use crate::exec::ExecSession;
+use crate::resources::ResilientDiscovery;
 
 /// Per-context kube clients, cached so switching contexts doesn't reconnect every time.
 #[derive(Default)]
 pub struct ClientCache(pub Mutex<HashMap<String, Client>>);
 
-/// Per-context API discovery results, cached since a full discovery run costs N+2 requests.
+/// Per-context API discovery results, cached since a full discovery run costs 2N+1 requests.
 #[derive(Default)]
-pub struct DiscoveryCache(pub Mutex<HashMap<String, Arc<Discovery>>>);
+pub struct DiscoveryCache(pub Mutex<HashMap<String, Arc<ResilientDiscovery>>>);
 
 /// Abort handles for cancellable background streams (watches, logs, port-forwards),
 /// keyed by a stream id handed back to the frontend when the stream is started.

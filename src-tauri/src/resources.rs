@@ -1,9 +1,11 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use futures::StreamExt;
 use kube::api::{Api, DeleteParams, DynamicObject, ListParams, Patch, PatchParams};
-use kube::discovery::{ApiCapabilities, ApiResource, Discovery, Scope};
+use kube::discovery::{ApiCapabilities, ApiGroup, ApiResource, Scope};
 use kube::runtime::{watcher, WatchStreamExt};
+use kube::Client;
 use serde::Serialize;
 use serde_json::Value;
 use tauri::{AppHandle, Emitter, State};
@@ -25,19 +27,56 @@ pub struct ResourceKindRef {
     pub namespaced: bool,
 }
 
+/// A discovery cache with per-API-group failure isolation. kube's own `Discovery::run()`
+/// queries every group in one pass and fails atomically - a single broken group (a stale
+/// aggregated APIService, a CRD with a dead conversion webhook, an RBAC-forbidden group)
+/// takes discovery down for the whole cluster, hiding every CRD kind rather than just the
+/// offending one. This walks groups individually via kube's public per-group oneshot
+/// helper and skips (logging) any group that errors, so the rest still show up.
+pub struct ResilientDiscovery {
+    groups: HashMap<String, ApiGroup>,
+}
+
+impl ResilientDiscovery {
+    fn groups(&self) -> impl Iterator<Item = &ApiGroup> {
+        self.groups.values()
+    }
+}
+
+async fn run_discovery(client: &Client) -> AppResult<ResilientDiscovery> {
+    let mut groups = HashMap::new();
+
+    match kube::discovery::group(client, ApiGroup::CORE_GROUP).await {
+        Ok(g) => {
+            groups.insert(ApiGroup::CORE_GROUP.to_string(), g);
+        }
+        Err(err) => tracing::warn!("discovery: skipping core group: {err}"),
+    }
+
+    let api_groups = client.list_api_groups().await.map_err(AppError::Kube)?;
+    for g in api_groups.groups {
+        let name = g.name.clone();
+        match kube::discovery::group(client, &name).await {
+            Ok(ag) => {
+                groups.insert(name, ag);
+            }
+            Err(err) => tracing::warn!("discovery: skipping api group {name}: {err}"),
+        }
+    }
+
+    Ok(ResilientDiscovery { groups })
+}
+
 async fn discovery_for(
     state: &State<'_, AppState>,
     context_name: &str,
-) -> AppResult<Arc<Discovery>> {
+) -> AppResult<Arc<ResilientDiscovery>> {
     if let Some(d) = state.discovery.0.lock().unwrap().get(context_name) {
         return Ok(d.clone());
     }
 
     let client = get_client(state, context_name)?;
-    let discovery = Discovery::new(client)
-        .run()
-        .await
-        .map_err(AppError::Kube)?;
+    let discovery = run_discovery(&client).await?;
     let arc = Arc::new(discovery);
     state
         .discovery
@@ -48,15 +87,29 @@ async fn discovery_for(
     Ok(arc)
 }
 
-fn resolve_kind(discovery: &Discovery, kind: &str) -> AppResult<(ApiResource, ApiCapabilities)> {
+/// Finds a kind across every version a group serves, not just its single "recommended"
+/// version - a CRD group like Istio's commonly has different kinds pinned to different
+/// versions (e.g. some at v1, others still only at v1beta1), and `ApiGroup::recommended_kind`
+/// would silently miss any kind not served at that one recommended version.
+fn find_kind_by_stability(group: &ApiGroup, kind: &str) -> Option<(ApiResource, ApiCapabilities)> {
+    group
+        .resources_by_stability()
+        .into_iter()
+        .find(|(ar, _)| ar.kind == kind)
+}
+
+fn resolve_kind(
+    discovery: &ResilientDiscovery,
+    kind: &str,
+) -> AppResult<(ApiResource, ApiCapabilities)> {
     // Prefer the core group (e.g. plain "Pod" over some CRD also named Pod).
     if let Some(core) = discovery.groups().find(|g| g.name().is_empty()) {
-        if let Some(found) = core.recommended_kind(kind) {
+        if let Some(found) = find_kind_by_stability(core, kind) {
             return Ok(found);
         }
     }
     for group in discovery.groups() {
-        if let Some(found) = group.recommended_kind(kind) {
+        if let Some(found) = find_kind_by_stability(group, kind) {
             return Ok(found);
         }
     }
@@ -67,7 +120,7 @@ fn resolve_kind(discovery: &Discovery, kind: &str) -> AppResult<(ApiResource, Ap
 /// rather than searching for a kind name across all groups. Needed because `apply_resource`
 /// must target the version the document actually declares, not just "some" version of the kind.
 fn resolve_by_gvk(
-    discovery: &Discovery,
+    discovery: &ResilientDiscovery,
     group: &str,
     version: &str,
     kind: &str,
@@ -114,7 +167,11 @@ pub async fn list_resource_kinds(
     let discovery = discovery_for(&state, &context_name).await?;
     let mut out = Vec::new();
     for group in discovery.groups() {
-        for (ar, caps) in group.recommended_resources() {
+        // `resources_by_stability` (not `recommended_resources`) so a group whose kinds are
+        // split across versions - e.g. Istio's networking.istio.io mixing v1/v1beta1/v1alpha3 -
+        // reports every kind, not just the ones served at the group's single "recommended"
+        // version.
+        for (ar, caps) in group.resources_by_stability() {
             out.push(ResourceKindRef {
                 group: ar.group.clone(),
                 version: ar.version.clone(),

@@ -63,6 +63,26 @@ the registry that drives both list views and detail-page actions.
   (`jsonPath.ts`) that had to support K8s's `[?(@.field=="value")]` filter
   syntax, not just dot-paths — real cert-manager columns (Ready/Status) use
   exactly that, caught by testing against the live CRD rather than assuming.
+  Correction (found while investigating a live report of missing Istio
+  CRDs, fixed alongside Tier 4): the "verified" claim above missed two bugs
+  that only show up on clusters shaped like a real Istio install.
+  `list_resource_kinds` (`resources.rs`) used `ApiGroup::recommended_resources()`,
+  which only returns kinds served at a group's single "recommended" version —
+  Istio's `networking.istio.io` mixes kinds pinned to different versions
+  (some at `v1`, others still only `v1beta1`/`v1alpha3`), so any kind not at
+  that one version silently never reached the frontend; switched to
+  `resources_by_stability()`, which picks each kind's own most-stable
+  version instead of one version for the whole group. Separately, kube's
+  `Discovery::run()` has no per-group error isolation — one broken group
+  (dead conversion webhook, stale aggregated APIService, RBAC-forbidden
+  group) fails discovery for the *entire* cluster, and the frontend
+  (`customResources.ts`) caught that into an `error` field nothing ever
+  read, so the whole "Custom Resources" sidebar section vanished silently
+  with no indication why. Replaced the single atomic `Discovery::run()` call
+  with a per-group walk (`ResilientDiscovery`/`run_discovery` in
+  `resources.rs`, built on kube's public `discovery::group()` oneshot
+  helper) that skips and logs a failing group instead of failing everything,
+  and wired the frontend error into a visible sidebar alert (`Sidebar.vue`).
 - Helm releases. **Done, read-only** (list/values/manifest/history) — user
   decision: no `helm` binary dependency, releases decoded directly from
   their `helm.sh/release.v1` Secrets (`helm.rs`), verified against real

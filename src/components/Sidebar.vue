@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { h, computed, onMounted, watch, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { NIcon, NMenu, NButton, NSpace, NTooltip, type MenuOption } from "naive-ui";
+import { NIcon, NMenu, NButton, NSpace, NTooltip, NAlert, type MenuOption } from "naive-ui";
 import {
   GridOutline,
   NotificationsOutline,
@@ -151,6 +151,16 @@ function collapseAll() {
         Collapse all
       </n-tooltip>
     </n-space>
+    <n-alert
+      v-if="customResources.error"
+      type="warning"
+      title="Custom resources unavailable"
+      closable
+      style="margin: 0 8px 8px"
+      @close="customResources.error = null"
+    >
+      {{ customResources.error }}
+    </n-alert>
     <n-menu
       :value="activeKey"
       :options="menuOptions"
