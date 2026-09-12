@@ -75,6 +75,7 @@ jobs:
 
       # Tag push: build and attach installers to a draft GitHub Release.
       - name: Build and publish release
+        id: tauri_release
         if: github.event_name == 'push'
         uses: tauri-apps/tauri-action@v1
         env:
@@ -95,6 +96,32 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: ${{ matrix.args }}
+
+      # The AppImage is self-contained and bundles ~130 native libraries (much of it
+      # LGPL-2.1+) that the .deb/.rpm instead declare as system dependencies. Redistributing
+      # them is permitted but the LGPL expects their actual copyright notices and license
+      # text to travel with the distribution. This reads them straight from dpkg's own
+      # records on this runner - the same one that built the AppImage - so it's accurate
+      # for the exact package versions bundled, not a hand-maintained snapshot.
+      - name: Collect Linux bundled-library copyrights
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          APPDIR="$(find src-tauri/target/release/bundle/appimage -maxdepth 1 -type d -name '*.AppDir' | head -1)"
+          ./scripts/collect-bundled-copyrights.sh "$APPDIR" THIRD-PARTY-COPYRIGHTS-LINUX-LIBS.txt
+
+      - name: Attach Linux library copyrights to the release
+        if: matrix.platform == 'ubuntu-22.04' && github.event_name == 'push'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "v${{ steps.tauri_release.outputs.appVersion }}" THIRD-PARTY-COPYRIGHTS-LINUX-LIBS.txt --clobber
+
+      - name: Upload Linux library copyrights artifact
+        if: matrix.platform == 'ubuntu-22.04' && github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: k8sman-ubuntu-22.04-linux-lib-copyrights
+          path: THIRD-PARTY-COPYRIGHTS-LINUX-LIBS.txt
+          if-no-files-found: warn
 
       # One artifact per installer *format*, not one zip per OS - each of these globs
       # only matches the platform(s) that actually produce it, so `if-no-files-found:

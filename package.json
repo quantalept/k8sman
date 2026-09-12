@@ -2,12 +2,14 @@
   "name": "k8sman",
   "private": true,
   "version": "0.1.0",
+  "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "gen:licenses": "node scripts/gen-licenses.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

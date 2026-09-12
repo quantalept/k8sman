@@ -1,0 +1,35 @@
+# Config for `cargo about generate` (invoked by scripts/gen-licenses.mjs).
+# `accepted` is the set of SPDX license IDs allowed in the dependency tree; a crate whose
+# license isn't listed here makes generation fail, which is deliberate - a new copyleft
+# dep should trip the CI licenses check, not slip through silently.
+
+accepted = [
+    "Apache-2.0",
+    "MIT",
+    "MIT-0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "0BSD",
+    "ISC",
+    "Zlib",
+    "BSL-1.0",
+    "CC0-1.0",
+    "Unlicense",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "CDLA-Permissive-2.0",
+    # Weak/file-level copyleft. Fine to redistribute unmodified as a dependency; the only
+    # obligation is preserving notices, which this generated file does. Present via
+    # cssparser / selectors / dtoa-short / option-ext.
+    "MPL-2.0",
+    # Only ever appears as one option in an OR expression (r-efi); MIT/Apache are listed
+    # first so cargo-about never actually selects this.
+    "LGPL-2.1-or-later",
+    "OpenSSL",
+]
+
+# target-lexicon is Apache-2.0 WITH LLVM-exception with no OR alternative. The
+# LLVM-exception only grants extra permission (it doesn't add restrictions), so it's
+# accepted here for this crate specifically.
+[target-lexicon]
+accepted = ["Apache-2.0 WITH LLVM-exception"]
