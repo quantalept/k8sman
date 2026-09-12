@@ -1,0 +1,24 @@
+================================================================================
+RUST CRATES
+================================================================================
+
+The k8sman backend links the following Rust crates. Each license below is
+followed by the crates that use it and its full text.
+
+{{#each overview}}
+  - {{{name}}} ({{count}})
+{{/each}}
+
+{{#each licenses}}
+--------------------------------------------------------------------------------
+{{{name}}}
+--------------------------------------------------------------------------------
+
+Used by:
+{{#each used_by}}
+  - {{{crate.name}}} {{{crate.version}}}{{#if crate.repository}}  ({{{crate.repository}}}){{/if}}
+{{/each}}
+
+{{{text}}}
+
+{{/each}}

@@ -30,6 +30,7 @@ const routes = [
   },
   { path: "/portforwards", name: "portforwards", component: () => import("../views/PortForwards.vue") },
   { path: "/settings", name: "settings", component: () => import("../views/Settings.vue") },
+  { path: "/about", name: "about", component: () => import("../views/About.vue") },
 ];
 
 export const router = createRouter({

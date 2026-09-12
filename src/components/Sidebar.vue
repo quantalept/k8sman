@@ -12,6 +12,7 @@ import {
   BoatOutline,
   ExpandOutline,
   ContractOutline,
+  InformationCircleOutline,
 } from "@vicons/ionicons5";
 import { resourceKinds, type ResourceKindConfig } from "../resourceKinds";
 import { useCustomResourcesStore } from "../stores/customResources";
@@ -99,6 +100,7 @@ const menuOptions = computed<MenuOption[]>(() => [
   { label: "Helm Releases", key: "/helm", icon: renderIcon(BoatOutline) },
   { label: "Port Forwards", key: "/portforwards", icon: renderIcon(SwapHorizontalOutline) },
   { label: "Settings", key: "/settings", icon: renderIcon(SettingsOutline) },
+  { label: "About", key: "/about", icon: renderIcon(InformationCircleOutline) },
 ]);
 
 const activeKey = computed(() => {
