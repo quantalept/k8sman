@@ -15,6 +15,7 @@ on:
       - 'scripts/license-templates/**'
       - 'src-tauri/about.toml'
       - 'src-tauri/about.hbs'
+      - 'LICENSE'
       - 'public/THIRD_PARTY_LICENSES.txt'
       - '.github/workflows/licenses.yml'
   pull_request:
@@ -28,6 +29,7 @@ on:
       - 'scripts/license-templates/**'
       - 'src-tauri/about.toml'
       - 'src-tauri/about.hbs'
+      - 'LICENSE'
       - 'public/THIRD_PARTY_LICENSES.txt'
       - '.github/workflows/licenses.yml'
   workflow_dispatch: {}

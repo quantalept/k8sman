@@ -13233,7 +13233,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 MIT License
 
-Copyright (c) <year> <copyright holders>
+Copyright (c) an unspecified year 07akioni
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction, including
@@ -13256,7 +13256,7 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 MIT License
 
-Copyright (c) <year> <copyright holders>
+Copyright (c) an unspecified year the copyright holder(s) (not specified in this package's metadata)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction, including
@@ -13742,7 +13742,7 @@ SOFTWARE.
 
 MIT License
 
-Copyright (c) <year> <copyright holders>
+Copyright (c) an unspecified year the copyright holder(s) (not specified in this package's metadata)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction, including
@@ -13765,7 +13765,7 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 MIT License
 
-Copyright (c) <year> <copyright holders>
+Copyright (c) an unspecified year the copyright holder(s) (not specified in this package's metadata)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction, including
@@ -13788,7 +13788,7 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 MIT License
 
-Copyright (c) <year> <copyright holders>
+Copyright (c) an unspecified year the copyright holder(s) (not specified in this package's metadata)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction, including
@@ -13915,7 +13915,7 @@ USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 MIT License
 
-Copyright (c) <year> <copyright holders>
+Copyright (c) an unspecified year 07akioni
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction, including
@@ -14752,7 +14752,7 @@ css-render  -  MIT  (07akioni)
 
 MIT License
 
-Copyright (c) <year> <copyright holders>
+Copyright (c) an unspecified year 07akioni
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction, including
@@ -15959,7 +15959,7 @@ vdirs  -  MIT  (07akioni)
 
 MIT License
 
-Copyright (c) <year> <copyright holders>
+Copyright (c) an unspecified year 07akioni
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction, including

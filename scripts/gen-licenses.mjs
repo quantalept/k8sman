@@ -52,9 +52,26 @@ const STANDARD_LICENSE_TEXT = Object.fromEntries(
 
 /** Resolves a (possibly compound, e.g. "Apache-2.0 OR MIT") SPDX expression to canonical
  * text for whichever disjunct we have a template for. */
-function standardTextFor(licenseExpr) {
+// The SPDX templates are fill-in-the-blank forms (`<year>`, `<copyright holders>`/
+// `<owner>`, or 0BSD's `YEAR`/`AUTHOR EMAIL`) - shipping them verbatim would present a
+// blank template as if it were the package's actual notice. Filled with the package's own
+// declared author where pnpm surfaced one (real, verifiable data, not a guess); the
+// publication year isn't available from package metadata, so that's stated as such rather
+// than fabricated.
+function fillLicenseTemplate(template, author) {
+  const holder = author?.trim() || "the copyright holder(s) (not specified in this package's metadata)";
+  return template
+    .replace(/<year>/gi, "an unspecified year")
+    .replace(/<copyright holders>/gi, holder)
+    .replace(/<owner>/gi, holder)
+    .replace(/\bYEAR\b/g, "an unspecified year")
+    .replace(/\bAUTHOR EMAIL\b/g, holder);
+}
+
+function standardTextFor(licenseExpr, author) {
   for (const candidate of licenseExpr.split(/\s+OR\s+/i).map((s) => s.trim())) {
-    if (STANDARD_LICENSE_TEXT[candidate]) return STANDARD_LICENSE_TEXT[candidate];
+    const template = STANDARD_LICENSE_TEXT[candidate];
+    if (template) return fillLicenseTemplate(template, author);
   }
   return null;
 }
@@ -90,7 +107,7 @@ for (const [license, entries] of Object.entries(pnpmJson)) {
         /* this install path is missing on disk - try the next one, if any */
       }
     }
-    text ??= standardTextFor(license) ?? undefined;
+    text ??= standardTextFor(license, e.author) ?? undefined;
     pkgs.set(`${e.name}@@${license}`, { name: e.name, license, author: e.author, text });
   }
 }
