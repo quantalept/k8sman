@@ -43,20 +43,64 @@ impl ResilientDiscovery {
     }
 }
 
+/// How many per-group discovery calls to run at once. `kube::discovery::group()` (the
+/// only per-group entry point this crate exposes publicly - see the comment on
+/// `ResilientDiscovery`) redundantly re-lists every API group internally on each call, so
+/// running these sequentially turns what should be ~N requests into ~2N *sequential* round
+/// trips. On a high-latency connection (a remote cluster, not localhost) that alone was
+/// the difference between a sub-second connect and a 40-50s one. Bounded concurrency
+/// instead of unbounded `join_all` avoids opening dozens of simultaneous connections
+/// against clusters with strict API priority-and-fairness limits.
+const DISCOVERY_CONCURRENCY: usize = 12;
+const DISCOVERY_RETRIES: usize = 3;
+const DISCOVERY_RETRY_DELAY: std::time::Duration = std::time::Duration::from_millis(300);
+
+/// Retries a per-group discovery call a few times before giving up. Running
+/// `DISCOVERY_CONCURRENCY` requests at once against a slow/remote/flaky link is more
+/// likely to trip a transient connection error than the old one-request-at-a-time
+/// sequential approach was, so this compensates for that rather than just being generally
+/// cautious.
+async fn discover_group_with_retry(client: &Client, name: &str) -> kube::Result<ApiGroup> {
+    let mut last_err = None;
+    for attempt in 0..DISCOVERY_RETRIES {
+        if attempt > 0 {
+            tokio::time::sleep(DISCOVERY_RETRY_DELAY).await;
+        }
+        match kube::discovery::group(client, name).await {
+            Ok(g) => return Ok(g),
+            Err(err) => last_err = Some(err),
+        }
+    }
+    Err(last_err.expect("loop runs at least once"))
+}
+
 async fn run_discovery(client: &Client) -> AppResult<ResilientDiscovery> {
     let mut groups = HashMap::new();
 
-    match kube::discovery::group(client, ApiGroup::CORE_GROUP).await {
-        Ok(g) => {
-            groups.insert(ApiGroup::CORE_GROUP.to_string(), g);
-        }
-        Err(err) => tracing::warn!("discovery: skipping core group: {err}"),
-    }
+    // The core group ("") is where Pod/Service/ConfigMap/Secret/Namespace/Node/PV/PVC/
+    // ServiceAccount all live - unlike a random CRD group, silently limping along without
+    // it would hide half the app with no visible sign of why. So a failure here is fatal
+    // to discovery (surfaces as a real, retryable error) rather than skipped like below.
+    let core = discover_group_with_retry(client, ApiGroup::CORE_GROUP)
+        .await
+        .map_err(AppError::Kube)?;
+    groups.insert(ApiGroup::CORE_GROUP.to_string(), core);
 
     let api_groups = client.list_api_groups().await.map_err(AppError::Kube)?;
-    for g in api_groups.groups {
-        let name = g.name.clone();
-        match kube::discovery::group(client, &name).await {
+    let results = futures::stream::iter(api_groups.groups.into_iter().map(|g| {
+        let client = client.clone();
+        async move {
+            let name = g.name;
+            let result = discover_group_with_retry(&client, &name).await;
+            (name, result)
+        }
+    }))
+    .buffer_unordered(DISCOVERY_CONCURRENCY)
+    .collect::<Vec<_>>()
+    .await;
+
+    for (name, result) in results {
+        match result {
             Ok(ag) => {
                 groups.insert(name, ag);
             }
@@ -184,6 +228,20 @@ pub async fn list_resource_kinds(
     Ok(out)
 }
 
+/// `metadata.managedFields` is never shown anywhere in the UI, but on a cluster with many
+/// controllers touching an object (or after years of `kubectl apply`/HPA/controller
+/// churn) it can be several KB per object - real memory and IPC-payload weight for
+/// nothing on the list/watch hot paths, where hundreds or thousands of objects are in
+/// flight at once. Left in place on `get_resource`, where the YAML tab may legitimately
+/// want to show it for one object.
+fn strip_managed_fields(value: &mut Value) {
+    if let Some(managed_fields) = value.pointer_mut("/metadata") {
+        if let Some(obj) = managed_fields.as_object_mut() {
+            obj.remove("managedFields");
+        }
+    }
+}
+
 /// List all objects of a given kind, optionally scoped to a namespace and/or filtered by a
 /// field selector (e.g. `involvedObject.name=foo` for Events) and/or a label selector
 /// (e.g. `app=foo,tier=bar`), as raw JSON.
@@ -212,7 +270,11 @@ pub async fn list_resources(
     Ok(list
         .items
         .into_iter()
-        .map(|obj| serde_json::to_value(obj).unwrap_or(Value::Null))
+        .map(|obj| {
+            let mut value = serde_json::to_value(obj).unwrap_or(Value::Null);
+            strip_managed_fields(&mut value);
+            value
+        })
         .collect())
 }
 
@@ -375,13 +437,15 @@ pub async fn start_watch(
         while let Some(event) = stream.next().await {
             let payload = match event {
                 Ok(watcher::Event::Apply(obj)) | Ok(watcher::Event::InitApply(obj)) => {
-                    Some(ResourceEvent::Upsert(
-                        serde_json::to_value(obj).unwrap_or(Value::Null),
-                    ))
+                    let mut value = serde_json::to_value(obj).unwrap_or(Value::Null);
+                    strip_managed_fields(&mut value);
+                    Some(ResourceEvent::Upsert(value))
                 }
-                Ok(watcher::Event::Delete(obj)) => Some(ResourceEvent::Delete(
-                    serde_json::to_value(obj).unwrap_or(Value::Null),
-                )),
+                Ok(watcher::Event::Delete(obj)) => {
+                    let mut value = serde_json::to_value(obj).unwrap_or(Value::Null);
+                    strip_managed_fields(&mut value);
+                    Some(ResourceEvent::Delete(value))
+                }
                 Ok(_) => None,
                 Err(err) => {
                     tracing::warn!("resource watch error: {err}");
