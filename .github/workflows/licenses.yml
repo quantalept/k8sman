@@ -12,8 +12,10 @@ on:
       - 'package.json'
       - 'scripts/gen-licenses.mjs'
       - 'scripts/licenses-preamble.txt'
+      - 'scripts/license-templates/**'
       - 'src-tauri/about.toml'
       - 'src-tauri/about.hbs'
+      - 'public/THIRD_PARTY_LICENSES.txt'
       - '.github/workflows/licenses.yml'
   pull_request:
     paths:
@@ -23,8 +25,10 @@ on:
       - 'package.json'
       - 'scripts/gen-licenses.mjs'
       - 'scripts/licenses-preamble.txt'
+      - 'scripts/license-templates/**'
       - 'src-tauri/about.toml'
       - 'src-tauri/about.hbs'
+      - 'public/THIRD_PARTY_LICENSES.txt'
       - '.github/workflows/licenses.yml'
   workflow_dispatch: {}
 
