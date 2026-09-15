@@ -81,7 +81,47 @@ const preamble = readFileSync(join(root, "scripts", "licenses-preamble.txt"), "u
 
 // --- 2. Rust crates, via cargo-about ---
 console.error("Generating Rust crate licenses (cargo about)...");
-const rust = run("cargo", ["about", "generate", "about.hbs"], join(root, "src-tauri")).trimEnd();
+const aboutJson = JSON.parse(
+  run("cargo", ["about", "generate", "--format", "json"], join(root, "src-tauri")),
+);
+
+// cargo-about groups crates by identical license *text*. When a crate ships no license
+// file of its own, cargo-about falls back to the generic SPDX canonical text - which for
+// templated licenses (MIT, BSD-3-Clause, ...) still contains unfilled placeholders like
+// `<year> <owner>`. Several such crates then land in one shared group under that same
+// blank text, which would misrepresent all of them as covered by one (unfilled) notice.
+// Detect that and expand the group into one block per crate, filled with that crate's own
+// declared author(s) from Cargo.toml - same approach as `fillLicenseTemplate` below.
+const RUST_PLACEHOLDER_RE = /<year>|<owner>|<copyright holders>/i;
+
+const rustLines = [
+  "================================================================================",
+  "RUST CRATES",
+  "================================================================================",
+  "",
+  "The k8sman backend links the following Rust crates. Each license below is",
+  "followed by the crates that use it and its full text.",
+  "",
+];
+for (const l of aboutJson.overview) rustLines.push(`  - ${l.name} (${l.count})`);
+rustLines.push("");
+
+const crateLine = (u) =>
+  `  - ${u.crate.name} ${u.crate.version}${u.crate.repository ? `  (${u.crate.repository})` : ""}`;
+
+for (const l of aboutJson.licenses) {
+  if (RUST_PLACEHOLDER_RE.test(l.text)) {
+    for (const u of l.used_by) {
+      rustLines.push("-".repeat(80), l.name, "-".repeat(80), "", "Used by:", crateLine(u), "");
+      rustLines.push(fillLicenseTemplate(l.text, u.crate.authors?.join(", ")), "");
+    }
+  } else {
+    rustLines.push("-".repeat(80), l.name, "-".repeat(80), "", "Used by:");
+    for (const u of l.used_by) rustLines.push(crateLine(u));
+    rustLines.push("", l.text, "");
+  }
+}
+const rust = rustLines.join("\n").trimEnd();
 
 // --- 3. npm production dependencies ---
 console.error("Collecting npm dependency licenses...");
