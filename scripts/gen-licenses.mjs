@@ -19,6 +19,14 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const out = join(root, "public", "THIRD_PARTY_LICENSES.txt");
 const templatesDir = join(root, "scripts", "license-templates");
 
+// public/ is copied verbatim into dist/ by Vite, and dist/ is what tauri.conf.json's
+// `frontendDist` bundles into every installer - so this is also how LICENSE and NOTICE
+// actually ship with the app (the preamble below promises a copy of LICENSE "is
+// distributed with this software"; without this, that promise would be false).
+for (const name of ["LICENSE", "NOTICE"]) {
+  writeFileSync(join(root, "public", name), readFileSync(join(root, name)));
+}
+
 // Matches a package's own LICENSE/LICENCE/COPYING/NOTICE file. Deliberately excludes
 // `.spdx` - some packages (the @tauri-apps/plugin-* family, among others) ship only a
 // `LICENSE.spdx` *metadata* manifest (SPDXVersion/PackageLicenseDeclared fields), not
@@ -61,8 +69,8 @@ const STANDARD_LICENSE_TEXT = Object.fromEntries(
 function fillLicenseTemplate(template, author) {
   const holder = author?.trim() || "the copyright holder(s) (not specified in this package's metadata)";
   return template
-    .replace(/<year>/gi, "an unspecified year")
-    .replace(/<copyright holders>/gi, holder)
+    .replace(/<year>|\[yyyy\]|\{yyyy\}/gi, "an unspecified year")
+    .replace(/<copyright holders>|\[name of copyright owner\]|\{name of copyright owner\}/gi, holder)
     .replace(/<owner>/gi, holder)
     .replace(/\bYEAR\b/g, "an unspecified year")
     .replace(/\bAUTHOR EMAIL\b/g, holder);
@@ -87,12 +95,20 @@ const aboutJson = JSON.parse(
 
 // cargo-about groups crates by identical license *text*. When a crate ships no license
 // file of its own, cargo-about falls back to the generic SPDX canonical text - which for
-// templated licenses (MIT, BSD-3-Clause, ...) still contains unfilled placeholders like
-// `<year> <owner>`. Several such crates then land in one shared group under that same
-// blank text, which would misrepresent all of them as covered by one (unfilled) notice.
-// Detect that and expand the group into one block per crate, filled with that crate's own
-// declared author(s) from Cargo.toml - same approach as `fillLicenseTemplate` below.
-const RUST_PLACEHOLDER_RE = /<year>|<owner>|<copyright holders>/i;
+// templated licenses (MIT, BSD-3-Clause, Apache-2.0's own appendix, ...) still contains
+// unfilled placeholders like `<year> <owner>` or `[yyyy] [name of copyright owner]`.
+// Several such crates then land in one shared group under that same blank text, which
+// would misrepresent all of them as covered by one (unfilled) notice. Detect that and
+// expand the group into one block per crate, filled with that crate's own declared
+// author(s) from Cargo.toml - same approach as `fillLicenseTemplate` below.
+//
+// Only applies when the group has no `source_path`, i.e. cargo-about couldn't find any
+// crate's own bundled license file and fell back to its built-in canonical text. A real
+// crate-bundled Apache-2.0 file legitimately (and near-universally) still contains its
+// own unmodified "APPENDIX: How to apply..." boilerplate with the same bracket
+// placeholders - that's accurate, unmodified upstream license text, not a missing notice,
+// and must not be rewritten.
+const RUST_PLACEHOLDER_RE = /<year>|<owner>|<copyright holders>|\[yyyy\]|\{yyyy\}|\[name of copyright owner\]|\{name of copyright owner\}/i;
 
 const rustLines = [
   "================================================================================",
@@ -110,7 +126,7 @@ const crateLine = (u) =>
   `  - ${u.crate.name} ${u.crate.version}${u.crate.repository ? `  (${u.crate.repository})` : ""}`;
 
 for (const l of aboutJson.licenses) {
-  if (RUST_PLACEHOLDER_RE.test(l.text)) {
+  if (!l.source_path && RUST_PLACEHOLDER_RE.test(l.text)) {
     for (const u of l.used_by) {
       rustLines.push("-".repeat(80), l.name, "-".repeat(80), "", "Used by:", crateLine(u), "");
       rustLines.push(fillLicenseTemplate(l.text, u.crate.authors?.join(", ")), "");

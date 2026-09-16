@@ -10,15 +10,32 @@ const notices = ref<string>("");
 const loading = ref(true);
 const error = ref<string | null>(null);
 
+const license = ref<string>("");
+const licenseLoading = ref(true);
+const licenseError = ref<string | null>(null);
+const showLicense = ref(false);
+
+async function loadText(path: string) {
+  const res = await fetch(path);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.text();
+}
+
 onMounted(async () => {
   try {
-    const res = await fetch("/THIRD_PARTY_LICENSES.txt");
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    notices.value = await res.text();
+    notices.value = await loadText("/THIRD_PARTY_LICENSES.txt");
   } catch (e) {
     error.value = `Could not load third-party license notices: ${e}`;
   } finally {
     loading.value = false;
+  }
+
+  try {
+    license.value = await loadText("/LICENSE");
+  } catch (e) {
+    licenseError.value = `Could not load the bundled LICENSE file: ${e}`;
+  } finally {
+    licenseLoading.value = false;
   }
 });
 </script>
@@ -35,10 +52,17 @@ onMounted(async () => {
         </n-text>
         <n-space>
           <n-button size="small" @click="openUrl(REPO)">Source code</n-button>
+          <n-button size="small" @click="showLicense = !showLicense">
+            {{ showLicense ? "Hide" : "Show" }} Apache-2.0 license
+          </n-button>
           <n-button size="small" @click="openUrl('https://www.apache.org/licenses/LICENSE-2.0')">
-            Apache-2.0 license
+            Open license online
           </n-button>
         </n-space>
+        <n-alert v-if="licenseError" type="error" :title="licenseError" />
+        <n-spin v-else-if="showLicense" :show="licenseLoading">
+          <pre class="notices">{{ license }}</pre>
+        </n-spin>
       </n-space>
     </n-card>
 

@@ -15,7 +15,10 @@ on:
       - 'scripts/license-templates/**'
       - 'src-tauri/about.toml'
       - 'LICENSE'
+      - 'NOTICE'
       - 'public/THIRD_PARTY_LICENSES.txt'
+      - 'public/LICENSE'
+      - 'public/NOTICE'
       - '.github/workflows/licenses.yml'
   pull_request:
     paths:
@@ -28,7 +31,10 @@ on:
       - 'scripts/license-templates/**'
       - 'src-tauri/about.toml'
       - 'LICENSE'
+      - 'NOTICE'
       - 'public/THIRD_PARTY_LICENSES.txt'
+      - 'public/LICENSE'
+      - 'public/NOTICE'
       - '.github/workflows/licenses.yml'
   workflow_dispatch: {}
 
@@ -65,9 +71,9 @@ jobs:
       - name: Regenerate notices
         run: pnpm gen:licenses
 
-      - name: Check the committed file is up to date
+      - name: Check the committed files are up to date
         run: |
-          if ! git diff --exit-code -- public/THIRD_PARTY_LICENSES.txt; then
-            echo "::error::public/THIRD_PARTY_LICENSES.txt is stale. Run 'pnpm gen:licenses' and commit the result."
+          if ! git diff --exit-code -- public/THIRD_PARTY_LICENSES.txt public/LICENSE public/NOTICE; then
+            echo "::error::public/THIRD_PARTY_LICENSES.txt, public/LICENSE or public/NOTICE is stale. Run 'pnpm gen:licenses' and commit the result."
             exit 1
           fi
