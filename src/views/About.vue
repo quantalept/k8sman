@@ -48,7 +48,10 @@ onMounted(async () => {
         <n-text depth="3">A lightweight Kubernetes desktop client.</n-text>
         <n-text>
           Licensed under the Apache License, Version 2.0. This product bundles third-party
-          open-source software; the notices below are also shipped with every build.
+          open-source software; the notices below are also shipped with every build. The Linux
+          AppImage additionally bundles the GTK / WebKitGTK runtime stack, whose notices ship
+          separately as the THIRD-PARTY-COPYRIGHTS-LINUX-LIBS.txt release asset rather than
+          appearing here.
         </n-text>
         <n-space>
           <n-button size="small" @click="openUrl(REPO)">Source code</n-button>
