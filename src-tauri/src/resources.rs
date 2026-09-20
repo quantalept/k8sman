@@ -32,7 +32,9 @@ pub struct ResourceKindRef {
 /// aggregated APIService, a CRD with a dead conversion webhook, an RBAC-forbidden group)
 /// takes discovery down for the whole cluster, hiding every CRD kind rather than just the
 /// offending one. This walks groups individually via kube's public per-group oneshot
-/// helper and skips (logging) any group that errors, so the rest still show up.
+/// helper and skips (logging) any non-core group that errors, so the rest still show up.
+/// The core group is the exception: a failure there fails discovery outright (see
+/// `run_discovery`).
 pub struct ResilientDiscovery {
     groups: HashMap<String, ApiGroup>,
 }
@@ -115,6 +117,23 @@ async fn discovery_for(
     state: &State<'_, AppState>,
     context_name: &str,
 ) -> AppResult<Arc<ResilientDiscovery>> {
+    if let Some(d) = state.discovery.0.lock().unwrap().get(context_name) {
+        return Ok(d.clone());
+    }
+
+    // Single-flight: concurrent callers for the same context queue on this lock, and all
+    // but the first find the cache populated once they get it. A failed run isn't cached,
+    // so the next waiter simply retries.
+    let lock = state
+        .discovery_locks
+        .0
+        .lock()
+        .unwrap()
+        .entry(context_name.to_string())
+        .or_default()
+        .clone();
+    let _guard = lock.lock().await;
+
     if let Some(d) = state.discovery.0.lock().unwrap().get(context_name) {
         return Ok(d.clone());
     }
