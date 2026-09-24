@@ -1,0 +1,73 @@
+================================================================================
+k8sman
+================================================================================
+
+Copyright 2023-2026 Andy <andy@quantalept.com>
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this software except in compliance with the License. A copy of the License is
+distributed with this software in the file LICENSE and is also available at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied.
+
+Source code: https://github.com/quantalept/k8sman
+
+
+================================================================================
+BUNDLED SYSTEM LIBRARIES (Linux AppImage only)
+================================================================================
+
+The Linux .deb and .rpm packages declare their GUI/runtime libraries as system
+dependencies and bundle none of them - this section does not apply to those.
+
+The Linux AppImage is self-contained and therefore redistributes copies of the
+GTK / WebKitGTK runtime stack and its transitive dependencies. Several of these
+libraries are licensed under the GNU Lesser General Public License (LGPL), v2.1
+or v3, or are dual-licensed with the LGPL as one option, including:
+
+    GLib / GObject / GIO, GdkPixbuf, GTK 3, GDK, Pango, Cairo, ATK / at-spi2,
+    librsvg, WebKitGTK (libwebkit2gtk-4.1) and JavaScriptCore (libjavascriptcoregtk-4.1),
+    libsoup 3, libsecret, GStreamer core and the base/good plugin sets,
+    GnuTLS, Nettle / Hogweed, libidn2, libunistring, libtasn1, p11-kit,
+    libgcrypt / libgpg-error, libseccomp, libcap, elfutils (libdw / libelf),
+    libmount / libblkid / libudev / libsystemd, libenchant, libmanette, libepoxy.
+
+These libraries are used unmodified and are linked dynamically. The LGPL permits
+this redistribution. In accordance with the LGPL:
+
+  * The libraries are dynamically linked and may be replaced by the user by
+    substituting compatible shared objects inside the extracted AppImage.
+
+  * The actual copyright notices and license text for every library this specific
+    AppImage build bundles - LGPL and permissively-licensed alike (zlib, libpng,
+    libjpeg-turbo, libwebp, libtiff, FreeType, HarfBuzz, fontconfig, pixman,
+    libxml2, libxslt, PCRE2, SQLite, ICU, brotli, the X11 and Wayland client
+    libraries, and others) - travel with this distribution as a companion file,
+    THIRD-PARTY-COPYRIGHTS-LINUX-LIBS.txt, generated at build time straight from
+    dpkg's own copyright records on the build runner (see
+    scripts/collect-bundled-copyrights.sh and the "Collect Linux bundled-library
+    copyrights" step in .github/workflows/release.yml) - not hand-maintained, so
+    it reflects the exact package versions actually bundled, not a snapshot that
+    can drift out of date. It ships as a GitHub Release asset alongside the
+    AppImage, and as a build artifact on a manual workflow run.
+
+  * The complete corresponding source code for every bundled library, at the
+    exact versions shipped, is the stock packaging from Ubuntu 22.04 LTS
+    ("jammy"). It can be obtained from:
+
+        https://packages.ubuntu.com/jammy/    (per-package "source" links)
+        apt-get source <package>              (with deb-src enabled on jammy)
+        http://archive.ubuntu.com/ubuntu/pool/main/
+        http://archive.ubuntu.com/ubuntu/pool/universe/
+
+    A written request for the source of any bundled library may also be sent to
+    the address in the copyright notice above; it will be honoured for three
+    years from the date this build was distributed.
+
+  * The full text of the GNU LGPL v2.1 is available at
+    https://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt and the GNU LGPL v3
+    at https://www.gnu.org/licenses/lgpl-3.0.txt .
