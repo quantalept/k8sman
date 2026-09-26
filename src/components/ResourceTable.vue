@@ -93,6 +93,7 @@ const rowKey = (row: any) => row.metadata?.uid ?? `${row.metadata?.namespace}/${
   <div>
     <n-alert v-if="error" type="error" :title="error" closable style="margin-bottom: 12px" />
     <n-data-table
+      virtual-scroll
       :columns="columns"
       :data="filteredItems"
       :loading="loading"

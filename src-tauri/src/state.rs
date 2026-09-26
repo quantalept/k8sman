@@ -17,6 +17,12 @@ pub struct ClientCache(pub Mutex<HashMap<String, Client>>);
 #[derive(Default)]
 pub struct DiscoveryCache(pub Mutex<HashMap<String, Arc<ResilientDiscovery>>>);
 
+/// Per-context single-flight locks for discovery. Without these, several commands hitting a
+/// cold cache at once (e.g. `list_resource_kinds` plus multiple list calls on page mount)
+/// would each start their own full discovery run, multiplying the request burst.
+#[derive(Default)]
+pub struct DiscoveryLocks(pub Mutex<HashMap<String, Arc<AsyncMutex<()>>>>);
+
 /// Abort handles for cancellable background streams (watches, logs, port-forwards),
 /// keyed by a stream id handed back to the frontend when the stream is started.
 #[derive(Default)]
@@ -31,6 +37,7 @@ pub struct ExecSessions(pub AsyncMutex<HashMap<Uuid, ExecSession>>);
 pub struct AppState {
     pub clients: ClientCache,
     pub discovery: DiscoveryCache,
+    pub discovery_locks: DiscoveryLocks,
     pub streams: StreamRegistry,
     pub exec_sessions: ExecSessions,
 }

@@ -7,6 +7,13 @@ function objectKey(obj: any): string {
   return meta.uid ?? `${meta.namespace ?? ""}/${meta.name ?? ""}`;
 }
 
+// A backend watch's initial sync re-delivers every already-existing object as its own
+// event on top of the bulk `listResources` call that already fetched them all - for a
+// list with hundreds/thousands of objects (pods, jobs), rebuilding `items.value` on every
+// single one of those is O(n^2) work purely on page load. Coalescing same-burst events
+// into one rebuild fixes that without changing the backend's per-object event shape.
+const FLUSH_DELAY_MS = 30;
+
 /**
  * Live list of a resource kind for the currently connected context, kept up to date via
  * a backend watch. Re-subscribes whenever the context, kind, or namespace changes.
@@ -24,11 +31,16 @@ export function useResourceList(
 
   let stopWatching: (() => void) | null = null;
   let generation = 0;
+  let flushTimer: ReturnType<typeof setTimeout> | null = null;
 
   async function subscribe() {
     const myGeneration = ++generation;
     stopWatching?.();
     stopWatching = null;
+    if (flushTimer !== null) {
+      clearTimeout(flushTimer);
+      flushTimer = null;
+    }
 
     const contextName = cluster.currentContext;
     if (!contextName) {
@@ -50,6 +62,15 @@ export function useResourceList(
       const byKey = new Map<string, any>(initial.map((obj) => [objectKey(obj), obj]));
       items.value = Array.from(byKey.values());
 
+      function scheduleFlush() {
+        if (flushTimer !== null) return;
+        flushTimer = setTimeout(() => {
+          flushTimer = null;
+          if (myGeneration !== generation) return;
+          items.value = Array.from(byKey.values());
+        }, FLUSH_DELAY_MS);
+      }
+
       const unlisten = await startWatch(
         contextName,
         kindValue,
@@ -62,7 +83,7 @@ export function useResourceList(
           } else {
             byKey.delete(key);
           }
-          items.value = Array.from(byKey.values());
+          scheduleFlush();
         },
         fieldSel,
         labelSel,
@@ -95,6 +116,10 @@ export function useResourceList(
   onScopeDispose(() => {
     generation++;
     stopWatching?.();
+    if (flushTimer !== null) {
+      clearTimeout(flushTimer);
+      flushTimer = null;
+    }
   });
 
   return { items, loading, error };
