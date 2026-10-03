@@ -1,6 +1,6 @@
 [package]
 name = "k8sman"
-version = "0.1.0"
+version = "0.2.0"
 description = "A lightweight Kubernetes desktop client"
 authors = ["Andy <andy@quantalept.com>"]
 license = "Apache-2.0"
